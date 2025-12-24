@@ -1,0 +1,9 @@
+.gitignore
+/.git
+/touchcursor-linux
+/tpu-commands
+/tpu-tasks
+/ubuntu-tasks
+/tasks-fedora
+remove_default.sh
+essential.sh

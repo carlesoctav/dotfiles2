@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Downloads a specific version tarball from https://zed.dev/releases and unpacks it
+# into ~/.local/. Also installs Zed fonts.
+# Usage: ./zed.sh [version] [channel]
+# Examples:
+#   ./zed.sh 0.216.0 preview
+#   ./zed.sh 0.215.0 stable
+
+install_fonts() {
+    font_dir="${HOME}/.local/share/fonts/zed"
+    mkdir -p "${font_dir}"
+
+    tmpdir="$(mktemp -d)"
+    trap 'rm -rf "${tmpdir}"' EXIT
+
+    fonts=(
+      "zed-app-fonts-1.2.0"
+      "zed-mono-1.2.0"
+      "zed-sans-1.2.0"
+    )
+
+    base_url="https://github.com/zed-industries/zed-fonts/releases/download/1.2.0"
+
+    for font in "${fonts[@]}"; do
+      printf 'Downloading %s...\n' "${font}"
+      curl -fsSL "${base_url}/${font}.zip" -o "${tmpdir}/${font}.zip"
+      unzip -qo "${tmpdir}/${font}.zip" -d "${tmpdir}/${font}"
+      find "${tmpdir}/${font}" -type f \( -name '*.ttf' -o -name '*.otf' \) -exec cp {} "${font_dir}/" \;
+    done
+
+    fc-cache -fv
+    printf 'Zed fonts installed to %s\n' "${font_dir}"
+}
+
+main() {
+    version="${1:-}"
+    channel="${2:-stable}"
+    
+    if [ -z "$version" ]; then
+        echo "Usage: $0 <version> [channel]"
+        echo "Example: $0 0.216.0 preview"
+        exit 1
+    fi
+
+    platform="$(uname -s)"
+    arch="$(uname -m)"
+
+    # Use TMPDIR if available (for environments with non-standard temp directories)
+    if [ -n "${TMPDIR:-}" ] && [ -d "${TMPDIR}" ]; then
+        temp="$(mktemp -d "$TMPDIR/zed-XXXXXX")"
+    else
+        temp="$(mktemp -d "/tmp/zed-XXXXXX")"
+    fi
+
+    if [ "$platform" = "Darwin" ]; then
+        platform="macos"
+    elif [ "$platform" = "Linux" ]; then
+        platform="linux"
+    else
+        echo "Unsupported platform $platform"
+        exit 1
+    fi
+
+    case "$platform-$arch" in
+        macos-arm64* | linux-arm64* | linux-armhf | linux-aarch64)
+            arch="aarch64"
+            ;;
+        macos-x86* | linux-x86* | linux-i686*)
+            arch="x86_64"
+            ;;
+        *)
+            echo "Unsupported platform or architecture"
+            exit 1
+            ;;
+    esac
+
+    if command -v curl >/dev/null 2>&1; then
+        curl () {
+            command curl -fL "$@"
+        }
+    elif command -v wget >/dev/null 2>&1; then
+        curl () {
+            wget -O- "$@"
+        }
+    else
+        echo "Could not find 'curl' or 'wget' in your path"
+        exit 1
+    fi
+
+    "$platform" "$version" "$channel" "$arch"
+
+    # Install Zed fonts
+    install_fonts
+
+    if [ "$(command -v zed)" = "$HOME/.local/bin/zed" ]; then
+        echo "Zed $version ($channel) has been installed. Run with 'zed'"
+    else
+        echo "To run Zed from your terminal, you must add ~/.local/bin to your PATH"
+        echo "Run:"
+
+        case "$SHELL" in
+            *zsh)
+                echo "   echo 'export PATH=\$HOME/.local/bin:\$PATH' >> ~/.zshrc"
+                echo "   source ~/.zshrc"
+                ;;
+            *fish)
+                echo "   fish_add_path -U $HOME/.local/bin"
+                ;;
+            *)
+                echo "   echo 'export PATH=\$HOME/.local/bin:\$PATH' >> ~/.bashrc"
+                echo "   source ~/.bashrc"
+                ;;
+        esac
+
+        echo "To run Zed now, '~/.local/bin/zed'"
+    fi
+}
+
+linux() {
+    version="$1"
+    channel="$2"
+    arch="$3"
+
+    if [ -n "${ZED_BUNDLE_PATH:-}" ]; then
+        cp "$ZED_BUNDLE_PATH" "$temp/zed-linux-$arch.tar.gz"
+    else
+        echo "Downloading Zed $version ($channel)"
+        curl "https://cloud.zed.dev/releases/$channel/$version/download?asset=zed&arch=$arch&os=linux&source=install.sh" > "$temp/zed-linux-$arch.tar.gz"
+    fi
+
+    suffix=""
+    if [ "$channel" != "stable" ]; then
+        suffix="-$channel"
+    fi
+
+    appid=""
+    case "$channel" in
+      stable)
+        appid="dev.zed.Zed"
+        ;;
+      nightly)
+        appid="dev.zed.Zed-Nightly"
+        ;;
+      preview)
+        appid="dev.zed.Zed-Preview"
+        ;;
+      dev)
+        appid="dev.zed.Zed-Dev"
+        ;;
+      *)
+        echo "Unknown release channel: ${channel}. Using stable app ID."
+        appid="dev.zed.Zed"
+        ;;
+    esac
+
+    # Unpack
+    rm -rf "$HOME/.local/zed$suffix.app"
+    mkdir -p "$HOME/.local/zed$suffix.app"
+    tar -xzf "$temp/zed-linux-$arch.tar.gz" -C "$HOME/.local/"
+
+    # Setup ~/.local directories
+    mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications"
+
+    # Link the binary
+    if [ -f "$HOME/.local/zed$suffix.app/bin/zed" ]; then
+        ln -sf "$HOME/.local/zed$suffix.app/bin/zed" "$HOME/.local/bin/zed"
+    else
+        # support for versions before 0.139.x.
+        ln -sf "$HOME/.local/zed$suffix.app/bin/cli" "$HOME/.local/bin/zed"
+    fi
+
+    # Copy .desktop file
+    desktop_file_path="$HOME/.local/share/applications/${appid}.desktop"
+    cp "$HOME/.local/zed$suffix.app/share/applications/zed$suffix.desktop" "${desktop_file_path}"
+    sed -i "s|Icon=zed|Icon=$HOME/.local/zed$suffix.app/share/icons/hicolor/512x512/apps/zed.png|g" "${desktop_file_path}"
+    sed -i "s|Exec=zed|Exec=$HOME/.local/zed$suffix.app/bin/zed|g" "${desktop_file_path}"
+}
+
+macos() {
+    version="$1"
+    channel="$2"
+    arch="$3"
+
+    echo "Downloading Zed $version ($channel)"
+    curl "https://cloud.zed.dev/releases/$channel/$version/download?asset=zed&os=macos&arch=$arch&source=install.sh" > "$temp/Zed-$arch.dmg"
+    hdiutil attach -quiet "$temp/Zed-$arch.dmg" -mountpoint "$temp/mount"
+    app="$(cd "$temp/mount/"; echo *.app)"
+    echo "Installing $app"
+    if [ -d "/Applications/$app" ]; then
+        echo "Removing existing $app"
+        rm -rf "/Applications/$app"
+    fi
+    ditto "$temp/mount/$app" "/Applications/$app"
+    hdiutil detach -quiet "$temp/mount"
+
+    mkdir -p "$HOME/.local/bin"
+    # Link the binary
+    ln -sf "/Applications/$app/Contents/MacOS/cli" "$HOME/.local/bin/zed"
+}
+
+main "$@"

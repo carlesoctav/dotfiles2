@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+nvim_options=(
+    -c "nnoremap i <nop>"
+    -c "nnoremap I <nop>"
+    -c "nnoremap a <nop>"
+    -c "nnoremap A <nop>"
+    -c "nnoremap p <nop>"
+    -c "nnoremap P <nop>"
+    -c "nnoremap q :q!<CR>"
+)
+
+if [[ -z "$1" ]]; then
+    echo "Usage: manu <command>"
+    exit 1
+fi
+
+"$1" --help | nvim -R -c "set nomodifiable" "${nvim_options[@]}" -
+

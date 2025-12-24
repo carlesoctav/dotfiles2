@@ -1,0 +1,5 @@
+huggingface_hub>=0.23
+google-cloud-storage>=2.16
+requests>=2.31
+tqdm>=4.66
+

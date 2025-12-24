@@ -1,0 +1,227 @@
+#!/bin/bash
+
+# tpux - TPU execution helper
+# Run commands on TPU workers with login shell or sync files between workers
+# Usage: tpux run [--worker=N] <command>
+#        tpux sync [--to=N|all|rest]
+
+set -e
+
+# Get TPU instance name from metadata
+TPU_NAME=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/instance-id 2>/dev/null)
+
+# Get zone from metadata
+ZONE=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/zone 2>/dev/null | cut -d'/' -f4)
+
+# Get current worker number from hostname (e.g., t1v-n-2ec481da-w-0 -> 0)
+CURRENT_WORKER=$(hostname | grep -oP 'w-\K\d+' || echo "")
+
+# Get total number of workers
+TOTAL_WORKERS=$(gcloud compute tpus tpu-vm describe "$TPU_NAME" --zone="$ZONE" --format="value(networkEndpoints.length())" 2>/dev/null || echo "2")
+if [ -z "$TOTAL_WORKERS" ]; then
+    TOTAL_WORKERS=2
+fi
+
+# Get hostname prefix (e.g., t1v-n-2ec481da)
+HOSTNAME_PREFIX=$(hostname | sed 's/-w-[0-9]*$//')
+
+COMMAND="$1"
+
+# Check if first argument is "run" or "sync"
+if [ "$COMMAND" != "run" ] && [ "$COMMAND" != "sync" ]; then
+    echo "Usage: tpux run [--worker=N|all|rest] \"<command>\""
+    echo "       tpux sync [--to=N|all|rest]"
+    echo ""
+    echo "Commands:"
+    echo "  run    Run command on workers"
+    echo "  sync   Sync current directory contents to other workers"
+    echo ""
+    echo "Run options:"
+    echo "  --worker=N      Run on specific worker (e.g., --worker=0)"
+    echo "  --worker=all    Run on all workers (default)"
+    echo "  --worker=rest   Run on all workers except current one"
+    echo ""
+    echo "Sync options:"
+    echo "  --to=N      Sync to specific worker (e.g., --to=1)"
+    echo "  --to=all    Sync to all workers except current"
+    echo "  --to=rest   Sync to all workers except current one (default)"
+    echo ""
+    echo "Examples:"
+    echo "  tpux run \"uv --version\""
+    echo "  tpux run --worker=0 \"python train.py\""
+    echo "  tpux run --worker=rest \"git pull\""
+    echo "  tpux sync              # sync current dir to other workers"
+    echo "  tpux sync --to=1       # sync current dir to worker 1"
+    echo "  tpux sync --to=all     # sync current dir to all workers"
+    exit 1
+fi
+
+shift  # Remove command from arguments
+
+# Handle sync command
+if [ "$COMMAND" = "sync" ]; then
+    # Always sync current directory contents
+    CURRENT_DIR=$(pwd)
+    
+    # Default to=rest (all workers except current)
+    TO_WORKERS="rest"
+    
+    # Parse --to argument if provided
+    if [[ "$1" == --to=* ]]; then
+        TO_WORKERS="${1#--to=}"
+        shift || true
+    fi
+    
+    # Handle "rest" option - sync to all workers except current
+    if [ "$TO_WORKERS" = "rest" ]; then
+        if [ -z "$CURRENT_WORKER" ]; then
+            echo "Error: Cannot determine current worker number"
+            exit 1
+        fi
+        
+        TO_WORKERS=""
+        for ((i=0; i<TOTAL_WORKERS; i++)); do
+            if [ $i -ne "$CURRENT_WORKER" ]; then
+                if [ -z "$TO_WORKERS" ]; then
+                    TO_WORKERS="$i"
+                else
+                    TO_WORKERS="$TO_WORKERS,$i"
+                fi
+            fi
+        done
+    elif [ "$TO_WORKERS" = "all" ]; then
+        TO_WORKERS=""
+        for ((i=0; i<TOTAL_WORKERS; i++)); do
+            if [ $i -ne "$CURRENT_WORKER" ]; then
+                if [ -z "$TO_WORKERS" ]; then
+                    TO_WORKERS="$i"
+                else
+                    TO_WORKERS="$TO_WORKERS,$i"
+                fi
+            fi
+        done
+    fi
+    
+    if [ -z "$TO_WORKERS" ]; then
+        echo "Error: No workers to sync to"
+        exit 1
+    fi
+    
+    echo "Syncing current directory: $CURRENT_DIR"
+    echo "To workers: $TO_WORKERS"
+    echo ""
+    
+    # Split workers by comma and sync to each
+    IFS=',' read -ra WORKER_ARRAY <<< "$TO_WORKERS"
+    for worker in "${WORKER_ARRAY[@]}"; do
+        TARGET_HOST="${HOSTNAME_PREFIX}-w-${worker}"
+        echo "==> Syncing to worker $worker ($TARGET_HOST)..."
+        
+        # Create the directory on remote if it doesn't exist
+        if [ -f ~/.ssh/google_compute_engine ]; then
+            ssh -i ~/.ssh/google_compute_engine "${TARGET_HOST}" "mkdir -p '${CURRENT_DIR}'"
+        else
+            ssh "${TARGET_HOST}" "mkdir -p '${CURRENT_DIR}'"
+        fi
+        
+        # Sync current directory contents to same path on remote
+        # Using trailing slashes to sync contents, not the directory itself
+        # Exclude common cache and virtual environment directories
+        if [ -f ~/.ssh/google_compute_engine ]; then
+            rsync -avz --progress -e "ssh -i ~/.ssh/google_compute_engine" \
+                --exclude='.venv/' \
+                --exclude='.cache/' \
+                --exclude='__pycache__/' \
+                --exclude='*.pyc' \
+                --exclude='.git/' \
+                --exclude='node_modules/' \
+                "${CURRENT_DIR}/" "${TARGET_HOST}:${CURRENT_DIR}/"
+        else
+            rsync -avz --progress \
+                --exclude='.venv/' \
+                --exclude='.cache/' \
+                --exclude='__pycache__/' \
+                --exclude='*.pyc' \
+                --exclude='.git/' \
+                --exclude='node_modules/' \
+                "${CURRENT_DIR}/" "${TARGET_HOST}:${CURRENT_DIR}/"
+        fi
+        echo ""
+    done
+    
+    echo "Sync complete!"
+    exit 0
+fi
+
+# Handle run command
+
+# Default worker is "all"
+WORKER="all"
+
+# Parse arguments
+if [[ "$1" == --worker=* ]]; then
+    WORKER="${1#--worker=}"
+    shift
+fi
+
+# Handle "rest" option - run on all workers except current
+if [ "$WORKER" = "rest" ]; then
+    if [ -z "$CURRENT_WORKER" ]; then
+        echo "Error: Cannot determine current worker number"
+        exit 1
+    fi
+    
+    # Build comma-separated list of all workers except current
+    WORKER=""
+    for ((i=0; i<TOTAL_WORKERS; i++)); do
+        if [ $i -ne "$CURRENT_WORKER" ]; then
+            if [ -z "$WORKER" ]; then
+                WORKER="$i"
+            else
+                WORKER="$WORKER,$i"
+            fi
+        fi
+    done
+    
+    if [ -z "$WORKER" ]; then
+        echo "Error: No other workers to run on (only one worker or cannot determine workers)"
+        exit 1
+    fi
+fi
+
+# All remaining arguments are the command
+if [ $# -eq 0 ]; then
+    echo "Error: No command specified"
+    echo "Usage: tpux run [--worker=N] \"<command>\""
+    exit 1
+fi
+
+# Force user to quote the command (check if there's only one argument)
+if [ $# -gt 1 ]; then
+    echo "Error: Command must be quoted"
+    echo "Usage: tpux run [--worker=N] \"<command>\""
+    echo ""
+    echo "Example: tpux run \"uv --version\""
+    echo "Not: tpux run uv --version"
+    exit 1
+fi
+
+COMMAND_STRING="$1"
+
+# Get current directory
+CURRENT_DIR=$(pwd)
+
+echo "Running on TPU: $TPU_NAME (zone: $ZONE, worker: $WORKER)"
+echo "Directory: $CURRENT_DIR"
+echo "Command: $COMMAND_STRING"
+echo ""
+
+# Run command with login shell to ensure PATH is loaded
+# First cd to current directory, then run the command
+# Escape single quotes by replacing ' with '\''
+ESCAPED_COMMAND="${COMMAND_STRING//\'/\'\\\'\'}"
+
+gcloud compute tpus tpu-vm ssh "$TPU_NAME" \
+    --zone="$ZONE" \
+    --worker="$WORKER" \
+    --command="bash -l -c 'cd $CURRENT_DIR && ${ESCAPED_COMMAND}'"

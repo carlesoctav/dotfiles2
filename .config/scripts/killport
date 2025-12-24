@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+selected_process=$(lsof -i | fzf --header="Select process to kill" | awk '{print $2}')
+
+if [ -n "$selected_process" ]; then
+    pid="$selected_process"
+    if [ -n "$pid" ] && [ "$pid" != "PID" ]; then
+        echo "Killing process $pid..."
+        kill -9 "$pid"
+        if [ $? -eq 0 ]; then
+            echo "Process $pid killed successfully"
+        else
+            echo "Failed to kill process $pid"
+        fi
+    else
+        echo "No valid PID selected"
+    fi
+else
+    echo "No process selected"
+fi
+

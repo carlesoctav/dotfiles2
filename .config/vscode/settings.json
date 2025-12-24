@@ -1,0 +1,56 @@
+{
+  "window.commandCenter": false,
+  "editor.lineNumbers": "relative",
+  "vscode-neovim.useWSL": true,
+  "extensions.experimental.affinity": {
+      "asvetliakov.vscode-neovim": 1
+  },
+  "vscode-neovim.neovimExecutablePaths.win32": "",
+  "vscode-neovim.neovimInitVimPaths.linux": "/home/carlesoctav/.config/nvim/init.lua",
+  "window.menuBarVisibility": "compact",
+  "vscode-neovim.ctrlKeysForInsertMode": ["h"],
+  "search.mode": "reuseEditor",
+  "vscode-neovim.ctrlKeysForNormalMode": [
+      "a",
+      "c",
+      "d",
+      "e",
+      "f",
+      "h",
+      "i",
+      "j",
+      "k",
+      "l",
+      "m",
+      "o",
+      "r",
+      "t",
+      "u",
+      "v",
+      "w",
+      "x",
+      "y",
+      "z",
+      "/",
+      "]",
+      "right",
+      "left",
+      "up",
+      "down",
+      "backspace",
+      "delete"
+  ],
+  "editor.minimap.enabled": false,
+  "workbench.colorTheme": "Kanagawa",
+  "workbench.iconTheme": "material-icon-theme",
+  "workbench.startupEditor": "none",
+  "background.windowBackgrounds": [
+    "c:/Users/carlesoctav/Downloads/1182749.jpg"
+  ],
+  "zenMode.centerLayout": false,
+  "zenMode.showTabs": "multiple" ,
+  "zenMode.hideStatusBar": false,
+  "breadcrumbs.enabled": false,
+}
+
+

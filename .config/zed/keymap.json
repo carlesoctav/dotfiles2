@@ -1,0 +1,173 @@
+[
+  { "context": "GitPanel && ChangesList ",
+    "bindings": {
+      "shift-r": "git::RestoreFile",
+      "?": "git::FileHistory",
+      "g shift-i": "git::AddToGitignore"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == visual",
+    "bindings": {
+      "space f": "editor::FormatSelections",
+      "/": [
+        "buffer_search::Deploy",
+        { "focus": true, "replace_enabled": false }
+      ],
+      "g/": "project_search::SearchInNew",
+      "s": [
+        "buffer_search::Deploy",
+        { "focus": true, "replace_enabled": true }
+      ],
+      "space a a": "assistant::InlineAssist",
+      "space a c": "agent::AddSelectionToThread",
+      "shift-j": "editor::MoveLineDown",
+      "shift-k": "editor::MoveLineUp",
+      "space r t": [
+        "assistant::InlineAssist",
+        {
+          "prompt": "remove type annotations, keep parameter names and default values"
+        }
+      ]
+    }
+  },
+  {
+    "context": "Editor && showing_completions",
+    "bindings": {
+      "ctrl-y": "editor::ConfirmCompletion"
+    }
+  },
+  // Normal mode bindings
+  {
+    "context": "vim_mode == normal",
+    "bindings": {
+      "space t a": "workspace::ToggleRightDock",
+      "space s f": "file_finder::Toggle",
+      "space s g": "pane::DeploySearch",
+      "space d l": "diagnostics::Deploy",
+      "g r": "editor::FindAllReferences",
+      "g j": "vim::NextMethodStart",
+      "g k": "vim::PreviousMethodStart",
+      "ctrl-b": "workspace::ToggleLeftDock",
+      "ctrl-j": "terminal_panel::ToggleFocus",
+      "space space": "tab_switcher::Toggle",
+      "space a a": "assistant::InlineAssist",
+      "space f": "editor::Format"
+    }
+  },
+  {
+    "context": "vim_mode == normal || vim_mode == visual",
+    "bindings": {
+      "space y": ["workspace::SendKeystrokes", "\" + y"],
+    }
+  },
+  {
+    "context": "vim_mode == insert",
+    "bindings": {
+      "ctrl-k": "editor::ShowSignatureHelp"
+    }
+  },
+  {
+    "context": "AgentPanel > Editor && VimControl && vim_mode == normal",
+    "bindings": {
+      "space g a": "agent::ToggleModelSelector"
+    }
+  },
+  {
+    "context": "GitPanel || ProjectPanel || CollabPanel || OutlinePanel || ChatPanel || VimControl|| EmptyPane || SharedScreen || MarkdownPreview || KeyContextView || AgentPanel || Terminal || ProjectSearchBar || ProjectSearchView || BufferSearchBar || Diagnostics || Pane",
+    "bindings": {
+      "ctrl-w ": null,
+      "ctrl-w |": "workspace::ToggleZoom",
+      "ctrl-w left": "workspace::ActivatePaneLeft",
+      "ctrl-w right": "workspace::ActivatePaneRight",
+      "ctrl-w up": "workspace::ActivatePaneUp",
+      "ctrl-w down": "workspace::ActivatePaneDown",
+      "ctrl-w ctrl-h": "workspace::ActivatePaneLeft",
+      "ctrl-w ctrl-l": "workspace::ActivatePaneRight",
+      "ctrl-w ctrl-k": "workspace::ActivatePaneUp",
+      "ctrl-w ctrl-j": "workspace::ActivatePaneDown",
+      "ctrl-w h": "workspace::ActivatePaneLeft",
+      "ctrl-w l": "workspace::ActivatePaneRight",
+      "ctrl-w k": "workspace::ActivatePaneUp",
+      "ctrl-w j": "workspace::ActivatePaneDown",
+      "ctrl-w shift-left": "workspace::SwapPaneLeft",
+      "ctrl-w shift-right": "workspace::SwapPaneRight",
+      "ctrl-w shift-up": "workspace::SwapPaneUp",
+      "ctrl-w shift-down": "workspace::SwapPaneDown",
+      "ctrl-w shift-h": "workspace::SwapPaneLeft",
+      "ctrl-w shift-l": "workspace::SwapPaneRight",
+      "ctrl-w shift-k": "workspace::SwapPaneUp",
+      "ctrl-w shift-j": "workspace::SwapPaneDown",
+      "ctrl-w >": "vim::ResizePaneRight",
+      "ctrl-w <": "vim::ResizePaneLeft",
+      "ctrl-w -": "vim::ResizePaneDown",
+      "ctrl-w +": "vim::ResizePaneUp",
+      "ctrl-w _": "vim::MaximizePane",
+      "ctrl-w =": "vim::ResetPaneSizes",
+      "ctrl-w g t": "pane::ActivateNextItem",
+      "ctrl-w ctrl-g t": "pane::ActivateNextItem",
+      "ctrl-w g shift-t": "pane::ActivatePreviousItem",
+      "ctrl-w ctrl-g shift-t": "pane::ActivatePreviousItem",
+      "ctrl-w w": "workspace::ActivateNextPane",
+      "ctrl-w ctrl-w": "workspace::ActivateNextPane",
+      "ctrl-w p": "workspace::ActivatePreviousPane",
+      "ctrl-w ctrl-p": "workspace::ActivatePreviousPane",
+      "ctrl-w shift-w": "workspace::ActivatePreviousPane",
+      "ctrl-w ctrl-shift-w": "workspace::ActivatePreviousPane",
+      "ctrl-w ctrl-v": "pane::SplitVertical",
+      "ctrl-w v": "pane::SplitVertical",
+      "ctrl-w shift-s": "pane::SplitHorizontal",
+      "ctrl-w ctrl-s": "pane::SplitHorizontal",
+      "ctrl-w s": "pane::SplitHorizontal",
+      "ctrl-w ctrl-c": "pane::CloseActiveItem",
+      "ctrl-w c": "pane::CloseActiveItem",
+      "ctrl-w ctrl-q": "pane::CloseActiveItem",
+      "ctrl-w q": "pane::CloseActiveItem",
+      "ctrl-w ctrl-a": "pane::CloseAllItems",
+      "ctrl-w a": "pane::CloseAllItems",
+      "ctrl-w ctrl-o": "workspace::CloseInactiveTabsAndPanes",
+      "ctrl-w o": "workspace::CloseInactiveTabsAndPanes",
+      "ctrl-w ctrl-n": "workspace::NewFileSplitHorizontal",
+      "ctrl-w n": "workspace::NewFileSplitHorizontal"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == visual && !VimWaiting && !VimObject",
+    "bindings": {
+      "shift-s": "vim::PushAddSurrounds"
+    }
+  },
+  {
+    "context": "VimControl && !menu",
+    "bindings": {
+      "ctrl-d": [
+        "action::Sequence",
+        ["vim::ScrollDown", "editor::ScrollCursorCenter"]
+      ],
+      "ctrl-u": [
+        "action::Sequence",
+        ["vim::ScrollUp", "editor::ScrollCursorCenter"]
+      ],
+      "pagedown": [
+        "action::Sequence",
+        ["vim::ScrollDown", "editor::ScrollCursorCenter"]
+      ],
+      "pageup": [
+        "action::Sequence",
+        ["vim::ScrollUp", "editor::ScrollCursorCenter"]
+      ]
+    }
+  },
+  {
+    "bindings": {
+      "ctrl-q": "pane::CloseActiveItem"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == normal && buffer_search_deployed",
+    "bindings": {
+      "escape": "buffer_search::Dismiss",
+      "ctrl-[": "buffer_search::Dismiss"
+    }
+  }
+]

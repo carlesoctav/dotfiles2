@@ -1,0 +1,4 @@
+#!/bin/bash
+file=$(mktemp)
+tmux capture-pane -pS - > "$file"
+tmux new-window -n "tmux-edit" "$EDITOR \"$file\" || vim \"$file\""

@@ -1,0 +1,61 @@
+require("nvim-treesitter.configs").setup({
+	ensure_installed = {
+		"c",
+		"cpp",
+		"lua",
+		"python",
+		"rust",
+		"vimdoc",
+		"vim",
+		"bash",
+		"json",
+	},
+	sync_install = false,
+	auto_install = true,
+	ignore_install = {},
+	modules = {},
+	highlight = { enable = true },
+	indent = { enable = false },
+	textobjects = {
+		move = {
+			enable = true,
+			set_jumps = true,
+			goto_next_start = {
+				["gj"] = "@function.outer",
+				["]c"] = "@class.outer",
+				["]a"] = "@parameter.inner",
+			},
+			goto_next_end = {
+				["gJ"] = "@function.outer",
+				["]C"] = "@class.outer",
+				["]A"] = "@parameter.inner",
+			},
+			goto_previous_start = {
+				["gk"] = "@function.outer",
+				["[c"] = "@class.outer",
+				["[a"] = "@parameter.inner",
+			},
+			goto_previous_end = {
+				["gK"] = "@function.outer",
+				["[C"] = "@class.outer",
+				["[A"] = "@parameter.inner",
+			},
+		},
+		select = {
+			enable = true,
+			lookahead = true,
+			keymaps = {
+				["af"] = "@function.outer",
+				["if"] = "@function.inner",
+				["ac"] = "@class.outer",
+				["ic"] = "@class.inner",
+				["ab"] = "@block.outer",
+				["ib"] = "@block.inner",
+				["al"] = "@loop.outer",
+				["il"] = "@loop.inner",
+				["a/"] = "@comment.outer",
+				["i/"] = "@comment.outer",
+			},
+		},
+	},
+})

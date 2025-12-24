@@ -1,0 +1,94 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run `zed: open default settings` from the
+// command palette (cmd-shift-p / ctrl-shift-p)
+{
+  "agent_servers": {
+    "your_agent": {
+      "command": "path_to_executable",
+      "args": [],
+      "env": {}
+    }
+  },
+  "agent": {
+    "default_profile": "write",
+    "default_model": {
+      "provider": "copilot_chat",
+      "model": "gpt-4.1"
+    },
+    "model_parameters": []
+  },
+  "search": {
+    "regex": true
+  },
+  "use_smartcase_search": true,
+  "diagnostics": {
+    "inline": {
+      "enabled": false
+    }
+  },
+  "base_keymap": "VSCode",
+  "cursor_shape": "bar",
+  "ssh_connections": [
+    {
+      "host": "8",
+      "args": [],
+      "projects": [
+        {
+          "paths": ["/mnt/carles/./"]
+        }
+      ]
+    }
+  ],
+  "vim_mode": true,
+  "icon_theme": "Zed (Default)",
+  "ui_font_size": 16,
+  "buffer_font_size": 15,
+  "theme": {
+    "mode": "dark",
+    "light": "Gruvbox Light",
+    "dark": "Catppuccin Macchiato"
+  },
+  "toolbar": {
+    "breadcrumbs": false,
+    "quick_actions": false,
+    "selections_menu": false
+  },
+  "tab_bar": {
+    "show": false,
+    "show_nav_history_buttons": false,
+    "show_tab_bar_buttons": false
+  },
+  "tabs": {
+    "git_status": false,
+    "close_position": "right",
+    "show_close_button": "hidden",
+    "file_icons": false,
+    "show_diagnostics": "off"
+  },
+  "status_bar": {
+    "active_language_button": false,
+    "cursor_position_button": false,
+    "line_endings_button": false
+  },
+  "global_lsp_settings": {
+    "button": false
+  },
+  "title_bar": {
+    "show_branch_icon": false,
+    "show_branch_name": false,
+    "show_project_items": false,
+    "show_onboarding_banner": false,
+    "show_user_picture": false,
+    "show_sign_in": false,
+    "show_menus": false
+  },
+  "scrollbar": {
+    "show": "never"
+  },
+  "relative_line_numbers": true
+}

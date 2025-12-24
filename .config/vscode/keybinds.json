@@ -1,0 +1,79 @@
+// Place your key bindings in this file to override the defaults
+[
+
+    {
+        "command": "vscode-neovim.send",
+        // the key sequence to activate the binding
+        "key": "ctrl+space",
+        // don't activate during insert mode
+        "when": "editorTextFocus && neovim.mode != insert",
+        // the input to send to Neovim
+        "args": "<C-Space>",
+    },
+    {
+        "key": "ctrl+q",
+        "command": "workbench.action.closeActiveEditor"
+    },
+    {
+        "key": "shift+k",
+        "command": "editor.action.showHover",
+        "when": "editorHoverVisible && editorTextFocus && neovim.init && neovim.mode == 'normal'"
+    },
+    {
+        "key": "ctrl+j",
+        "command": "workbench.action.terminal.toggleTerminal"
+    },
+    {
+        "key": "ctrl+d",
+        "command": "workbench.action.terminal.split",
+        "when": "terminalFocus && terminalProcessSupported"
+    },
+    {
+        "key": "ctrl+alt+j",
+        "command": "workbench.action.toggleMaximizedPanel"
+    },
+    {
+        "key": "ctrl+w",
+        "command": "workbench.action.terminal.kill",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "ctrl+alt+b",
+        "command": "workbench.action.toggleEditorWidths"
+    },
+    {
+        "key": "ctrl+j",
+        "command": "-workbench.action.togglePanel"
+    },
+    {
+        "key": "ctrl+e",
+        "command": "runCommands",
+        "args": {
+            "commands": [
+                {
+                    "command": "workbench.files.action.focusFilesExplorer"
+                }
+            ]
+        }
+    },
+    {
+        "key": "ctrl+k",
+        "command": "workbench.action.terminal.focusNextPane",
+        "when": "terminalFocus && terminalProcessSupported"
+    },
+    {
+        "key": "ctrl+n",
+        "command": "workbench.action.terminal.new",
+        "when": "terminalProcessSupported  && terminalFocus"
+    },
+    {
+        "key": "ctrl+shift+`",
+        "command": "-workbench.action.terminal.new",
+        "when": "terminalProcessSupported || terminalWebExtensionContributedProfile"
+    },
+    {
+        "key": "ctrl+o",
+        "command": "-workbench.action.files.openFile"
+    }
+]
+

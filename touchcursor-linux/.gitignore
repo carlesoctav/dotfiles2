@@ -1,0 +1,8 @@
+# gcc
+obj
+
+# ccls (https://github.com/MaskRay/ccls)
+.ccls-cache
+
+# Project
+out
