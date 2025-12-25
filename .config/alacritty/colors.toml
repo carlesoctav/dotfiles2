@@ -3,73 +3,8 @@ background = '#0e1416'
 foreground = '#dee3e5'
 
 [font]
-normal = { family = "Zed Mono", style = "Medium" }
-bold = { family = "Zed Mono", style = "Bold" }
-italic = { family = "Zed Mono", style = "Medium Italic" }
-size = 9
+normal = { family = "IBM Plex Sans"}
+bold = { family = "Zed Sans", style = "Bold" }
+italic = { family = "Zed Sans", style = "Medium Italic" }
+size = 11 
  
-[colors.cursor]
-text = '#dee3e5'
-cursor = '#bfc8cb' 
- 
-[colors.vi_mode_cursor]
-text = '#0e1416'
-cursor = '#83d2e4' 
- 
-[colors.search.matches]
-foreground = '#3f484b' 
-background = '#bdc5eb' 
- 
-[colors.search.focused_match]
-foreground = '#3f484b' 
-background = '#83d2e4' 
- 
-[colors.footer_bar]
-foreground = '#3f484b' 
-background = '#dee3e5' 
- 
-[colors.hints.start]
-foreground = '#3f484b' 
-background = '#b2cbd1' 
- 
-[colors.hints.end]
-foreground = '#3f484b' 
-background = '#b2cbd1' 
- 
-[colors.selection]
-text = '#0e1416'
-background = '#83d2e4'
- 
- 
-[colors.normal]
-black = '#181818' 
-red = '#ffb4ab' 
-green = '#83d2e4' 
-yellow = '#006877' 
-blue = '#83d2e4' 
-magenta = '#bdc5eb' 
-cyan = '#b2cbd1' 
-white = '#BAC2DE' 
- 
- 
-[colors.bright]
-black = '#585B70' 
-red = '#F38BA8' 
-green = '#A6E3A1' 
-yellow = '#F9E2AF' 
-blue = '#89B4FA' 
-magenta = '#F5C2E7' 
-cyan = '#94E2D5' 
-white = '#A6ADC8' 
- 
- 
-[colors.dim]
-black = '#45475A' 
-red = '#F38BA8' 
-green = '#A6E3A1' 
-yellow = '#F9E2AF' 
-blue = '#89B4FA' 
-magenta = '#F5C2E7' 
-cyan = '#94E2D5' 
-white = '#BAC2DE' 
-

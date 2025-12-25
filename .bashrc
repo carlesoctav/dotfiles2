@@ -140,18 +140,22 @@ alias rtc='systemctl --user restart touchcursor.service'
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
-. "$HOME/.local/bin/env"
 
 export EDITOR="nvim"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-. "$HOME/.local/share/../bin/env"
-
 export PATH=/home/carlesoctav/.opencode/bin:$PATH
+export PATH=/home/carlesoctav/.local/bin:$PATH
 
 if [ -z "$SSH_AUTH_SOCK" ]; then
     eval "$(ssh-agent -s)" > /dev/null
 fi
 eval "$(mise activate bash)"
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/home/carlesoctav/dotfiles2/google-cloud-sdk/path.bash.inc' ]; then . '/home/carlesoctav/dotfiles2/google-cloud-sdk/path.bash.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/home/carlesoctav/dotfiles2/google-cloud-sdk/completion.bash.inc' ]; then . '/home/carlesoctav/dotfiles2/google-cloud-sdk/completion.bash.inc'; fi
