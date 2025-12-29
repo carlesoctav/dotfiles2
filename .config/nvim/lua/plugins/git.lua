@@ -12,29 +12,38 @@ return {
 						vim.keymap.set(mode, l, r, opts)
 					end
 
-				-- Navigation
-				map('n', ']c', function()
+			-- Navigation
+			map('n', ']c', function()
+				if vim.api.nvim_win_get_option(0, "diff") then
+					vim.cmd.normal({']c', bang = true})
+				else
 					gitsigns.nav_hunk('next')
-				end, { desc = 'Go to next git change' })
+				end
+			end, { desc = 'Go to next git change' })
 
-				map('n', '[c', function()
+			map('n', '[c', function()
+				if vim.api.nvim_win_get_option(0, "diff") then
+					vim.cmd.normal({'[c', bang = true})
+				else
 					gitsigns.nav_hunk('prev')
-				end, { desc = 'Go to previous git change' })
+				end
+			end, { desc = 'Go to previous git change' })
 
-				-- Diff actions
-				map('n', 'do', gitsigns.preview_hunk_inline, { desc = 'Expand diff hunk' })
-				map('n', 'dO', gitsigns.toggle_deleted, { desc = 'Toggle staged' })
-				map('n', 'du', function()
-					gitsigns.stage_hunk()
-					gitsigns.nav_hunk('next')
-				end, { desc = 'Stage and next' })
-				map('n', 'dU', function()
-					gitsigns.unstage_hunk()
-					gitsigns.nav_hunk('next')
-				end, { desc = 'Unstage and next' })
-				map('n', 'dp', gitsigns.reset_hunk, { desc = 'Restore change' })
-
-				-- Other mappings
+			map('n', 'do', function()
+				if vim.api.nvim_win_get_option(0, "diff") then
+					vim.cmd.diffget()
+				else
+					gitsigns.preview_hunk_inline()
+				end
+			end, { desc = 'Expand diff hunk' })
+			map('n', 'du', function() gitsigns.stage_hunk() end, { desc = 'Stage and next' })
+			map('n', 'dp', function()
+				if vim.api.nvim_win_get_option(0, "diff") then
+					vim.cmd.diffput()
+				else
+					gitsigns.reset_hunk()
+				end
+			end, { desc = 'Restore change' })
 				map('n', '<leader>th', function()
 					gitsigns.setqflist('all')
 				end)
@@ -46,6 +55,13 @@ return {
 	},
 
 	"tpope/vim-fugitive",
+
+    -- co — choose ours
+    -- ct — choose theirs
+    -- cb — choose both
+    -- c0 — choose none
+    -- ]x — move to previous conflict
+    -- [x — move to next conflict
 	{'akinsho/git-conflict.nvim', version = "*", config = true}
 
 }

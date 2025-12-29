@@ -149,9 +149,8 @@ export NVM_DIR="$HOME/.nvm"
 export PATH=/home/carlesoctav/.opencode/bin:$PATH
 export PATH=/home/carlesoctav/.local/bin:$PATH
 
-if [ -z "$SSH_AUTH_SOCK" ]; then
-    eval "$(ssh-agent -s)" > /dev/null
-fi
+# Add ed25519 key to agent if not already loaded
+ssh-add -l 2>/dev/null | grep -q id_ed25519 || ssh-add ~/.ssh/id_ed25519 2>/dev/null
 eval "$(mise activate bash)"
 
 # The next line updates PATH for the Google Cloud SDK.
