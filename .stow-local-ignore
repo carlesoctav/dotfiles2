@@ -4,6 +4,6 @@
 /tpu-commands
 /tpu-tasks
 /ubuntu-tasks
-/tasks-fedora
+/fedora-tasks
 remove_default.sh
 essential.sh

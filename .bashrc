@@ -153,8 +153,3 @@ export PATH=/home/carlesoctav/.local/bin:$PATH
 ssh-add -l 2>/dev/null | grep -q id_ed25519 || ssh-add ~/.ssh/id_ed25519 2>/dev/null
 eval "$(mise activate bash)"
 
-# The next line updates PATH for the Google Cloud SDK.
-if [ -f '/home/carlesoctav/dotfiles2/google-cloud-sdk/path.bash.inc' ]; then . '/home/carlesoctav/dotfiles2/google-cloud-sdk/path.bash.inc'; fi
-
-# The next line enables shell command completion for gcloud.
-if [ -f '/home/carlesoctav/dotfiles2/google-cloud-sdk/completion.bash.inc' ]; then . '/home/carlesoctav/dotfiles2/google-cloud-sdk/completion.bash.inc'; fi
