@@ -1,7 +1,7 @@
 ---
 Description: Remove AI code slop
 mode: all
-model: google/gemini-claude-opus-4-5-thinking-high
+model: google/antigravity-claude-opus-4-5-thinking 
 ---
 
 Check the diff against main, and remove all AI generated slop introduced in this branch.

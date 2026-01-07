@@ -109,6 +109,11 @@
           "paths": [
             "/mnt/carles/vllm-with-tpu"
           ]
+        },
+        {
+          "paths": [
+            "/mnt/ssd/tunix3"
+          ]
         }
       ]
     },

@@ -82,8 +82,7 @@ if on remote: rsync knowledge to local after changes.
 ## project conventions
 
 - use project's package manager (bun, uv)
-- always run with uv for python project
-- never manually edit package.json, pyproject.toml
+- always run with .venv/bin/python for python project
 - for long processes (10-30 min), use pty background — verify code works first
 
 ### commits
