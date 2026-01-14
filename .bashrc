@@ -140,16 +140,23 @@ alias rtc='systemctl --user restart touchcursor.service'
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
+export OPENCODE_ANTIGRAVITY_ACCOUNT_SELECTION_STRATEGY=sticky
 
 export EDITOR="nvim"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-export PATH=/home/carlesoctav/.opencode/bin:$PATH
 export PATH=/home/carlesoctav/.local/bin:$PATH
 
 # Add ed25519 key to agent if not already loaded
 ssh-add -l 2>/dev/null | grep -q id_ed25519 || ssh-add ~/.ssh/id_ed25519 2>/dev/null
 eval "$(mise activate bash)"
 
+
+if [ -z "$TMUX" ] && [ -n "$SSH_AUTH_SOCK" ]; then
+  tmux set-environment -g SSH_AUTH_SOCK "$SSH_AUTH_SOCK" 2>/dev/null
+fi
+rssh() {
+  export SSH_AUTH_SOCK=$(tmux show-environment 2>/dev/null | grep "^SSH_AUTH_SOCK" | cut -d= -f2-)
+}
