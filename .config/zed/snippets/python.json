@@ -1,6 +1,6 @@
 {
   "log": {
-    "prefix": "log",
+    "prefix": "debugprint",
     "body": "print(\"DEBUGPRINT {$0}:\", $0)",
     "description": "debugprint"
   }

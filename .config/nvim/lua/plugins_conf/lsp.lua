@@ -39,8 +39,15 @@ vim.api.nvim_create_autocmd('LspDetach', {
 local servers = {
 	pyrefly = {
 		init_options = {
-			displayTypeErrors = "on",
+			displayTypeErrors = "force-off",
 		},
+	},
+	ty = {
+		settings = {
+			ty = {
+				diagnosticMode = 'off',
+			}
+		}
 	},
 	ruff = {},
 	lua_ls = {

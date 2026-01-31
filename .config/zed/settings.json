@@ -7,6 +7,35 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "ssh_connections": [
+    {
+      "host": "8",
+      "args": [],
+      "projects": [
+        {
+          "paths": [
+            "/mnt/ssd/marin2"
+          ]
+        }
+      ]
+    },
+    {
+      "host": "8-1",
+      "args": [],
+      "projects": [
+        {
+          "paths": [
+            "/mnt/carles/minimal/./"
+          ]
+        },
+        {
+          "paths": [
+            "/mnt/carles/tunix"
+          ]
+        }
+      ]
+    }
+  ],
   "colorize_brackets": true,
   "show_edit_predictions": true,
   "terminal": {
@@ -49,8 +78,8 @@
   },
   "agent": {
     "inline_assistant_model": {
-      "provider": "Z.ai",
-      "model": "glm-4.6",
+      "provider": "copilot_chat",
+      "model": "gpt-5-mini",
     },
     "always_allow_tool_actions": true,
     "default_profile": "write",
@@ -131,9 +160,9 @@
   "languages": {
     "Python": {
       "language_servers": [
-        "pyrefly",
+        "ty",
         "ruff",
-        "!ty",
+        "!pyrefly",
         "!basedpyright",
         "!pyright",
         "!pylsp",
