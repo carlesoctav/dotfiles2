@@ -84,8 +84,8 @@
     "always_allow_tool_actions": true,
     "default_profile": "write",
     "default_model": {
-      "provider": "Z.ai",
-      "model": "glm-4.7",
+      "provider": "copilot_chat",
+      "model": "gpt-5-mini",
     },
     "model_parameters": [],
   },
@@ -110,7 +110,7 @@
   "theme": {
     "mode": "dark",
     "light": "Gruvbox Light",
-    "dark": "Gruvbox Material",
+    "dark": "Gruvbox Material Neovim Dark",
   },
   "toolbar": {
     "breadcrumbs": true,
