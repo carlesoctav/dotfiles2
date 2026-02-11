@@ -14,6 +14,11 @@
       "projects": [
         {
           "paths": [
+            "/mnt/carles/vllm-tpu"
+          ]
+        },
+        {
+          "paths": [
             "/mnt/ssd/marin2"
           ]
         }
@@ -23,6 +28,11 @@
       "host": "8-1",
       "args": [],
       "projects": [
+        {
+          "paths": [
+            "/mnt/carles/llm"
+          ]
+        },
         {
           "paths": [
             "/mnt/carles/minimal/./"
@@ -110,7 +120,7 @@
   "theme": {
     "mode": "dark",
     "light": "Gruvbox Light",
-    "dark": "Gruvbox Material Neovim Dark",
+    "dark": "Gruvbox Material",
   },
   "toolbar": {
     "breadcrumbs": true,
