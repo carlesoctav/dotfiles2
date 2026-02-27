@@ -3,9 +3,7 @@
   "username": "carlesoctav",
   "autoupdate": false,
   "plugin": [
-    "opencode-google-antigravity-auth",
     "opencode-pty",
-    "opencode-antigravity-quota@0.1.4"
   ],
   "theme": "catppuccin",
   "small_model": "github-copilot/gpt-5-mini",
@@ -15,25 +13,4 @@
     "external_directory": "allow"
   },
   "model":"openai/gpt-5.3-codex",
-  "provider": {
-      "google": {
-        "npm": "@ai-sdk/google",
-        "models": {
-          "gemini-claude-opus-4-6-thinking": {
-            "id": "claude-opus-4-6-thinking",
-            "name": "Opus 4.6",
-            "reasoning": true,
-            "limit": { "context": 200000, "output": 64000 },
-            "modalities": {
-              "input": ["text", "image", "pdf"],
-              "output": ["text"]
-            },
-            "variants": {
-              "low": { "options": { "thinkingConfig": { "thinkingBudget": 8192, "includeThoughts": true } } },
-              "high": { "options": { "thinkingConfig": { "thinkingBudget": 32768, "includeThoughts": true } } }
-            }
-          }
-        }
-      }
-    }
 }

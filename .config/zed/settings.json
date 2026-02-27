@@ -7,44 +7,38 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "auto_update": false,
   "ssh_connections": [
     {
       "host": "8",
       "args": [],
       "projects": [
         {
-          "paths": [
-            "/mnt/carles/vllm-tpu"
-          ]
+          "paths": ["/mnt/carles/PufferLib"],
         },
         {
-          "paths": [
-            "/mnt/ssd/marin2"
-          ]
-        }
-      ]
+          "paths": ["/mnt/carles/vllm-tpu"],
+        },
+        {
+          "paths": ["/mnt/ssd/marin2"],
+        },
+      ],
     },
     {
       "host": "8-1",
       "args": [],
       "projects": [
         {
-          "paths": [
-            "/mnt/carles/llm"
-          ]
+          "paths": ["/mnt/carles/llm"],
         },
         {
-          "paths": [
-            "/mnt/carles/minimal/./"
-          ]
+          "paths": ["/mnt/carles/minimal/./"],
         },
         {
-          "paths": [
-            "/mnt/carles/tunix"
-          ]
-        }
-      ]
-    }
+          "paths": ["/mnt/carles/tunix"],
+        },
+      ],
+    },
   ],
   "colorize_brackets": true,
   "show_edit_predictions": true,

@@ -92,7 +92,7 @@ main() {
     "$platform" "$version" "$channel" "$arch"
 
     # Install Zed fonts
-    install_fonts
+    # install_fonts
 
     if [ "$(command -v zed)" = "$HOME/.local/bin/zed" ]; then
         echo "Zed $version ($channel) has been installed. Run with 'zed'"
