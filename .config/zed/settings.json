@@ -7,6 +7,9 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "edit_predictions": {
+    "provider": "none"
+  },
   "auto_update": false,
   "ssh_connections": [
     {
@@ -15,6 +18,12 @@
       "projects": [
         {
           "paths": ["/mnt/carles/PufferLib"],
+        },
+        {
+          "paths": ["/mnt/carles/jax-llm"],
+        },
+        {
+          "paths": ["/mnt/carles/llm"],
         },
         {
           "paths": ["/mnt/carles/vllm-tpu"],
@@ -49,8 +58,8 @@
     "use_system_clipboard": "never",
   },
   "agent_servers": {
-    "gemini": {
-      "ignore_system_version": false,
+    "codex-acp": {
+      "type": "registry",
     },
   },
   "context_servers": {},
@@ -77,15 +86,14 @@
     },
   },
   "base_keymap": "VSCode",
-  "features": {
-    "edit_prediction_provider": "none",
-  },
   "agent": {
+    "tool_permissions": {
+      "default": "allow"
+    },
     "inline_assistant_model": {
       "provider": "copilot_chat",
       "model": "gpt-5-mini",
     },
-    "always_allow_tool_actions": true,
     "default_profile": "write",
     "default_model": {
       "provider": "copilot_chat",
@@ -171,7 +179,7 @@
         "!pyright",
         "!pylsp",
       ],
-      "format_on_save": "off",
+      "format_on_save": "on",
     },
   },
   "lsp": {

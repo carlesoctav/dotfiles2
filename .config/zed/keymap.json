@@ -41,7 +41,7 @@
       "g k": "vim::PreviousMethodStart",
       "ctrl-b": "workspace::ToggleLeftDock",
       "ctrl-j": "terminal_panel::ToggleFocus",
-      "space space": "tab_switcher::ToggleAll",
+      "space space": "tab_switcher::OpenInActivePane",
       "space a a": "assistant::InlineAssist",
       "space f": "editor::Format",
     },
@@ -87,8 +87,8 @@
   },
   {
     "bindings": {
-      "ctrl-q": "pane::CloseActiveItem",
       "ctrl-w |": "workspace::ToggleZoom",
+      "ctrl-q": "workspace::CloseItemInAllPanes",
     },
   },
   {
