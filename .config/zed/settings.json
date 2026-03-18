@@ -8,7 +8,7 @@
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
   "edit_predictions": {
-    "provider": "none"
+    "provider": "none",
   },
   "auto_update": false,
   "ssh_connections": [
@@ -88,7 +88,7 @@
   "base_keymap": "VSCode",
   "agent": {
     "tool_permissions": {
-      "default": "allow"
+      "default": "allow",
     },
     "inline_assistant_model": {
       "provider": "copilot_chat",
@@ -171,6 +171,15 @@
   "format_on_save": "off",
   "languages": {
     "Python": {
+      "code_actions_on_format": {
+        "source.organizeImports.ruff": true,
+        "source.fixAll.ruff": true
+      },
+      "formatter": {
+        "language_server": {
+          "name": "ruff",
+        },
+      },
       "language_servers": [
         "ty",
         "ruff",
@@ -179,7 +188,7 @@
         "!pyright",
         "!pylsp",
       ],
-      "format_on_save": "on",
+      "format_on_save": "off",
     },
   },
   "lsp": {
