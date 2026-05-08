@@ -16,10 +16,27 @@ ZONE=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/comp
 # Get current worker number from hostname (e.g., t1v-n-2ec481da-w-0 -> 0)
 CURRENT_WORKER=$(hostname | grep -oP 'w-\K\d+' || echo "")
 
+# Multislice TPU VMs expose each slice as a separate TPU resource, e.g.
+# node-1-0, node-1-1, node-1-2, node-1-3. In that case gcloud worker indexes
+# are still only 0 for each resource, and the slice id is the logical worker.
+TPU_ENV=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/tpu-env 2>/dev/null || true)
+MEGASCALE_NUM_SLICES=$(printf '%s\n' "$TPU_ENV" | sed -n "s/^MEGASCALE_NUM_SLICES: '\\([^']*\\)'.*/\\1/p")
+MEGASCALE_SLICE_ID=$(printf '%s\n' "$TPU_ENV" | sed -n "s/^MEGASCALE_SLICE_ID: '\\([^']*\\)'.*/\\1/p")
+MULTISLICE=0
+TPU_NAME_PREFIX=""
+if [[ -n "$MEGASCALE_NUM_SLICES" && "$MEGASCALE_NUM_SLICES" -gt 1 && "$TPU_NAME" =~ ^(.+-)[0-9]+$ ]]; then
+    MULTISLICE=1
+    TOTAL_WORKERS="$MEGASCALE_NUM_SLICES"
+    CURRENT_WORKER="$MEGASCALE_SLICE_ID"
+    TPU_NAME_PREFIX="${BASH_REMATCH[1]}"
+fi
+
 # Get total number of workers
-TOTAL_WORKERS=$(gcloud compute tpus tpu-vm describe "$TPU_NAME" --zone="$ZONE" --format="value(networkEndpoints.length())" 2>/dev/null || echo "2")
-if [ -z "$TOTAL_WORKERS" ]; then
-    TOTAL_WORKERS=2
+if [ "$MULTISLICE" -ne 1 ]; then
+    TOTAL_WORKERS=$(gcloud compute tpus tpu-vm describe "$TPU_NAME" --zone="$ZONE" --format="value(networkEndpoints.length())" 2>/dev/null || echo "2")
+    if [ -z "$TOTAL_WORKERS" ]; then
+        TOTAL_WORKERS=2
+    fi
 fi
 
 # Get hostname prefix (e.g., t1v-n-2ec481da)
@@ -110,10 +127,42 @@ if [ "$COMMAND" = "sync" ]; then
     echo "Syncing current directory: $CURRENT_DIR"
     echo "To workers: $TO_WORKERS"
     echo ""
+
+    SYNC_ARCHIVE=""
+    if [ "$MULTISLICE" -eq 1 ]; then
+        CURRENT_PARENT=$(dirname "$CURRENT_DIR")
+        CURRENT_BASE=$(basename "$CURRENT_DIR")
+        SYNC_ARCHIVE=$(mktemp -t "tpux-sync-${CURRENT_BASE}.XXXXXX.tar.gz")
+        echo "Packing $CURRENT_DIR without .venv/.git/cache directories..."
+        tar -czf "$SYNC_ARCHIVE" \
+            --exclude="${CURRENT_BASE}/.venv" \
+            --exclude="${CURRENT_BASE}/.cache" \
+            --exclude="${CURRENT_BASE}/__pycache__" \
+            --exclude="${CURRENT_BASE}/*.pyc" \
+            --exclude="${CURRENT_BASE}/.git" \
+            --exclude="${CURRENT_BASE}/node_modules" \
+            -C "$CURRENT_PARENT" "$CURRENT_BASE"
+        trap 'rm -f "$SYNC_ARCHIVE"' EXIT
+    fi
     
     # Split workers by comma and sync to each
     IFS=',' read -ra WORKER_ARRAY <<< "$TO_WORKERS"
     for worker in "${WORKER_ARRAY[@]}"; do
+        if [ "$MULTISLICE" -eq 1 ]; then
+            TARGET_TPU="${TPU_NAME_PREFIX}${worker}"
+            ARCHIVE_NAME=$(basename "$SYNC_ARCHIVE")
+            echo "==> Syncing to slice $worker ($TARGET_TPU)..."
+            gcloud compute tpus tpu-vm scp --compress "$SYNC_ARCHIVE" "$TARGET_TPU:/tmp/$ARCHIVE_NAME" \
+                --zone="$ZONE" \
+                --worker="0"
+            gcloud compute tpus tpu-vm ssh "$TARGET_TPU" \
+                --zone="$ZONE" \
+                --worker="0" \
+                --command="rm -rf '$CURRENT_DIR' && mkdir -p '$CURRENT_PARENT' && tar -xzf '/tmp/$ARCHIVE_NAME' -C '$CURRENT_PARENT' && rm -f '/tmp/$ARCHIVE_NAME'"
+            echo ""
+            continue
+        fi
+
         TARGET_HOST="${HOSTNAME_PREFIX}-w-${worker}"
         echo "==> Syncing to worker $worker ($TARGET_HOST)..."
         
@@ -212,6 +261,9 @@ COMMAND_STRING="$1"
 CURRENT_DIR=$(pwd)
 
 echo "Running on TPU: $TPU_NAME (zone: $ZONE, worker: $WORKER)"
+if [ "$MULTISLICE" -eq 1 ]; then
+    echo "Multislice mode: ${MEGASCALE_NUM_SLICES} slices, current slice ${CURRENT_WORKER}"
+fi
 echo "Directory: $CURRENT_DIR"
 echo "Command: $COMMAND_STRING"
 echo ""
@@ -221,7 +273,20 @@ echo ""
 # Escape single quotes by replacing ' with '\''
 ESCAPED_COMMAND="${COMMAND_STRING//\'/\'\\\'\'}"
 
-gcloud compute tpus tpu-vm ssh "$TPU_NAME" \
-    --zone="$ZONE" \
-    --worker="$WORKER" \
-    --command="bash -l -c 'cd $CURRENT_DIR && ${ESCAPED_COMMAND}'"
+if [ "$MULTISLICE" -eq 1 ]; then
+    IFS=',' read -ra WORKER_ARRAY <<< "$WORKER"
+    for worker in "${WORKER_ARRAY[@]}"; do
+        TARGET_TPU="${TPU_NAME_PREFIX}${worker}"
+        echo "==> Running on slice $worker ($TARGET_TPU)..."
+        gcloud compute tpus tpu-vm ssh "$TARGET_TPU" \
+            --zone="$ZONE" \
+            --worker="0" \
+            --command="bash -l -c 'cd $CURRENT_DIR && { ${ESCAPED_COMMAND}; }'"
+        echo ""
+    done
+else
+    gcloud compute tpus tpu-vm ssh "$TPU_NAME" \
+        --zone="$ZONE" \
+        --worker="$WORKER" \
+        --command="bash -l -c 'cd $CURRENT_DIR && { ${ESCAPED_COMMAND}; }'"
+fi
