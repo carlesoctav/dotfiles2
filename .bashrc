@@ -162,4 +162,6 @@ rssh() {
   export SSH_AUTH_SOCK=$(tmux show-environment 2>/dev/null | grep "^SSH_AUTH_SOCK" | cut -d= -f2-)
 }
 
-. "$HOME/.local/bin/env"
+
+# Added by Antigravity CLI installer
+export PATH="/home/carlesoctav/.local/bin:$PATH"

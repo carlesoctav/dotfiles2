@@ -42,6 +42,7 @@
       "ctrl-b": "workspace::ToggleLeftDock",
       "ctrl-j": "terminal_panel::ToggleFocus",
       "space space": "tab_switcher::OpenInActivePane",
+      // "space space": "tab_switcher::ToggleAll",
       "space a a": "assistant::InlineAssist",
       "space f": "editor::Format",
     },
@@ -88,7 +89,8 @@
   {
     "bindings": {
       "ctrl-w |": "workspace::ToggleZoom",
-      "ctrl-q": "workspace::CloseItemInAllPanes",
+      "ctrl-q": "pane::CloseActiveItem",
+      // "ctrl-q": "workspace::CloseItemInAllPanes",
     },
   },
   {

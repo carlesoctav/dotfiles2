@@ -11,5 +11,5 @@ git config --global push.recurseSubmodules on-demand
 git config --global submodule.recurse true
 
 curl -LsSf https://astral.sh/uv/install.sh | sh
-curl https://mise.run | sh
+# curl https://mise.run | sh
 curl -fsSL https://opencode.ai/install | bash

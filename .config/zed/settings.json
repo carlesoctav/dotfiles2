@@ -17,37 +17,74 @@
       "args": [],
       "projects": [
         {
-          "paths": ["/mnt/carles/PufferLib"],
+          "paths": [
+            "/home/carlesoctav/a"
+          ]
         },
         {
-          "paths": ["/mnt/carles/jax-llm"],
+          "paths": [
+            "/mnt/carles/PufferLib"
+          ]
         },
         {
-          "paths": ["/mnt/carles/llm"],
+          "paths": [
+            "/mnt/carles/jax-llm"
+          ]
         },
         {
-          "paths": ["/mnt/carles/vllm-tpu"],
+          "paths": [
+            "/mnt/carles/llm"
+          ]
         },
         {
-          "paths": ["/mnt/ssd/marin2"],
+          "paths": [
+            "/mnt/carles/vllm-tpu"
+          ]
         },
-      ],
+        {
+          "paths": [
+            "/mnt/ssd/marin2"
+          ]
+        }
+      ]
     },
     {
       "host": "8-1",
       "args": [],
       "projects": [
         {
-          "paths": ["/mnt/carles/llm"],
+          "paths": [
+            "/mnt/carles/llm"
+          ]
         },
         {
-          "paths": ["/mnt/carles/minimal/./"],
+          "paths": [
+            "/mnt/carles/minimal/./"
+          ]
         },
         {
-          "paths": ["/mnt/carles/tunix"],
-        },
-      ],
+          "paths": [
+            "/mnt/carles/tunix"
+          ]
+        }
+      ]
     },
+    {
+      "host": "6-4",
+      "args": [],
+      "projects": [
+        {
+          "paths": [
+            "/mnt/carles/llm"
+          ]
+        }
+      ]
+    },
+    {
+      "host": "node-1-0",
+      "args": [],
+      "projects": []
+    }
   ],
   "colorize_brackets": true,
   "show_edit_predictions": true,
@@ -173,7 +210,7 @@
     "Python": {
       "code_actions_on_format": {
         "source.organizeImports.ruff": true,
-        "source.fixAll.ruff": true
+        "source.fixAll.ruff": true,
       },
       "formatter": {
         "language_server": {
