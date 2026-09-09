@@ -7,6 +7,25 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "project_panel": {
+    "dock": "left"
+  },
+  "debugger": {
+    "dock": "left"
+  },
+  "outline_panel": {
+    "dock": "left"
+  },
+  "collaboration_panel": {
+    "dock": "left"
+  },
+  "git_panel": {
+    "dock": "left"
+  },
+  "cli_default_open_behavior": "existing_window",
+  "session": {
+    "trust_all_worktrees": true
+  },
   "edit_predictions": {
     "provider": "none",
   },
@@ -19,6 +38,11 @@
         {
           "paths": [
             "/home/carlesoctav/a"
+          ]
+        },
+        {
+          "paths": [
+            "/kaggle/working/llm"
           ]
         },
         {
@@ -84,6 +108,33 @@
       "host": "node-1-0",
       "args": [],
       "projects": []
+    },
+    {
+      "host": "Kaggle",
+      "args": [],
+      "projects": [
+        {
+          "paths": [
+            "/kaggle/working"
+          ]
+        },
+        {
+          "paths": [
+            "/kaggle/working/llm"
+          ]
+        }
+      ]
+    },
+    {
+      "host": "wireguard-vpn-india",
+      "args": [],
+      "projects": [
+        {
+          "paths": [
+            "/home/carlesoctav"
+          ]
+        }
+      ]
     }
   ],
   "colorize_brackets": true,
@@ -95,6 +146,15 @@
     "use_system_clipboard": "never",
   },
   "agent_servers": {
+    "antigravity-acp": {
+      "default_config_options": {
+        "model": "gemini-3.8-flash-medium"
+      },
+      "type": "registry"
+    },
+    "github-copilot-cli": {
+      "type": "registry"
+    },
     "codex-acp": {
       "type": "registry",
     },
@@ -124,6 +184,8 @@
   },
   "base_keymap": "VSCode",
   "agent": {
+    "dock": "right",
+    "sidebar_side": "right",
     "tool_permissions": {
       "default": "allow",
     },
@@ -159,7 +221,7 @@
   "theme": {
     "mode": "dark",
     "light": "Gruvbox Light",
-    "dark": "Gruvbox Material",
+    "dark": "Zedokai Darker (Filter Octagon)",
   },
   "toolbar": {
     "breadcrumbs": true,
@@ -186,7 +248,7 @@
   },
 
   "title_bar": {
-    "show_branch_icon": true,
+    "show_branch_status_icon": true,
     "show_branch_name": false,
     "show_project_items": false,
     "show_onboarding_banner": false,
@@ -229,11 +291,6 @@
     },
   },
   "lsp": {
-    "pyrefly": {
-      "initialization_options": {
-        "displayTypeErrors": "force-off",
-      },
-    },
     "ty": {
       "settings": {
         "diagnosticMode": "off",
