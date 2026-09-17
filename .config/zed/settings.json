@@ -135,6 +135,27 @@
           ]
         }
       ]
+    },
+    {
+      "host": "kaggle-jupyter",
+      "args": [],
+      "projects": []
+    },
+    {
+      "host": "colab",
+      "args": [],
+      "projects": [
+        {
+          "paths": [
+            "/root"
+          ]
+        }
+      ]
+    },
+    {
+      "host": "colab-shell",
+      "args": [],
+      "projects": []
     }
   ],
   "colorize_brackets": true,
@@ -182,7 +203,7 @@
       },
     },
   },
-  "base_keymap": "VSCode",
+  "base_keymap": "Zed",
   "agent": {
     "dock": "right",
     "sidebar_side": "right",
@@ -221,7 +242,7 @@
   "theme": {
     "mode": "dark",
     "light": "Gruvbox Light",
-    "dark": "Zedokai Darker (Filter Octagon)",
+    "dark": "Gruvbox Dark",
   },
   "toolbar": {
     "breadcrumbs": true,

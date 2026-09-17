@@ -1,52 +1,42 @@
-require("nvim-treesitter.configs").setup({
-	ensure_installed = {
-		"c",
-		"cpp",
-		"lua",
-		"python",
-		"rust",
-		"vimdoc",
-		"vim",
-		"bash",
-		"json",
-	},
-	sync_install = false,
-	auto_install = true,
-	ignore_install = {},
-	modules = {},
-	highlight = { enable = true },
-	indent = { enable = false },
-	textobjects = {
-		move = {
-			enable = true,
-			set_jumps = true,
-			goto_next_start = {
-				["gj"] = "@function.outer",
-				["]]"] = "@class.outer",
-			},
-			goto_next_end = {
-				["gJ"] = "@function.outer",
-				["]["] = "@class.outer",
-			},
-			goto_previous_start = {
-				["gk"] = "@function.outer",
-				["[["] = "@class.outer",
-			},
-			goto_previous_end = {
-				["gK"] = "@function.outer",
-				["[]"] = "@class.outer",
-			},
-		},
-		select = {
-			enable = true,
-			lookahead = true,
-			keymaps = {
-				["af"] = "@function.outer",
-				["if"] = "@function.inner",
-				["ac"] = "@class.outer",
-				["ic"] = "@class.inner",
-				["ib"] = "@block.inner",
-			},
-		},
-	},
+-- nvim-treesitter `main` branch (rewrite for Neovim 0.12+).
+-- No `nvim-treesitter.configs`, no `ensure_installed`/`auto_install` in setup.
+local ensure_installed = {
+	"c",
+	"cpp",
+	"lua",
+	"python",
+	"rust",
+	"vimdoc",
+	"vim",
+	"bash",
+	"json",
+	"go",
+	"markdown",
+	"markdown_inline",
+}
+
+require("nvim-treesitter").setup({
+	-- parsers + queries go here (prepended to rtp)
+	install_dir = vim.fn.stdpath("data") .. "/site",
+})
+
+-- Install missing parsers async (no-op if already installed).
+-- Use :TSInstall / :TSUpdate manually for updates.
+local installed = require("nvim-treesitter").get_installed()
+local not_installed = vim.tbl_filter(function(parser)
+	return not vim.tbl_contains(installed, parser)
+end, ensure_installed)
+if #not_installed > 0 then
+	require("nvim-treesitter").install(not_installed)
+end
+
+-- Enable Neovim's built-in treesitter highlighting for these filetypes.
+-- (main branch no longer does `highlight = { enable = true }` for you.)
+local ts_group = vim.api.nvim_create_augroup("TreesitterHighlight", { clear = true })
+vim.api.nvim_create_autocmd("FileType", {
+	group = ts_group,
+	pattern = ensure_installed,
+	callback = function()
+		pcall(vim.treesitter.start)
+	end,
 })
