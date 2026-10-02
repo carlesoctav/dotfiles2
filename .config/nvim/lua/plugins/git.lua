@@ -49,8 +49,14 @@ return {
 				end
 			end, { desc = 'Restore change' })
 				map('n', '<leader>th', function()
-					gitsigns.setqflist('all')
-				end)
+					local qflist = vim.fn.getqflist({ winid = 0, title = 0 })
+					local is_open = qflist.winid ~= 0 and vim.api.nvim_win_is_valid(qflist.winid)
+					if is_open and qflist.title == 'Hunks' then
+						vim.cmd('cclose')
+					else
+						gitsigns.setqflist('all')
+					end
+				end, { desc = 'Toggle git changes in quickfix list' })
 
 				map({ 'o', 'x' }, 'ih', gitsigns.select_hunk)
 				end

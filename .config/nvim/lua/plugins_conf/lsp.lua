@@ -116,29 +116,17 @@ vim.keymap.set('n', ']d', function()
 end, { desc = 'Go to next diagnostic and show float' })
 
 vim.api.nvim_create_autocmd('DiagnosticChanged', {
-	callback = function(args)
-		vim.diagnostic.setloclist({ open = false })
+	callback = function()
 		vim.diagnostic.setqflist({ open = false })
 	end,
 })
 
-
-vim.keymap.set('n', '<leader>dq', function()
-	local qflist = vim.fn.getqflist({ winid = 0 })
+vim.keymap.set('n', '<leader>dl', function()
+	local qflist = vim.fn.getqflist({ winid = 0, title = 0 })
 	local is_open = qflist.winid ~= 0 and vim.api.nvim_win_is_valid(qflist.winid)
-	if is_open then
+	if is_open and qflist.title == 'Diagnostics' then
 		vim.cmd('cclose')
 	else
 		vim.diagnostic.setqflist({ open = true })
 	end
-end, { desc = 'Toggle global diagnostics in quickfix list' })
-
-vim.keymap.set('n', '<leader>dl', function()
-	local loclist = vim.fn.getloclist(0, { title = 0, winid = 0 })
-	local is_open = loclist.winid ~= 0 and vim.api.nvim_win_is_valid(loclist.winid)
-	if is_open then
-		vim.cmd('lclose')
-	else
-		vim.diagnostic.setloclist({ open = true })
-	end
-end, { desc = 'Toggle diagnostics in location list' })
+end, { desc = 'Toggle diagnostics in quickfix list' })
