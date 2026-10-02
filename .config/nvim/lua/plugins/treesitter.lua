@@ -47,6 +47,13 @@ return {
 			vim.keymap.set({ "n", "x", "o" }, "[]", function()
 				move.goto_previous_end("@class.outer", "textobjects")
 			end)
+			-- jupyter `# %%` cell markers (see after/queries/python/textobjects.scm)
+			vim.keymap.set({ "n", "x", "o" }, "]j", function()
+				move.goto_next_start("@cell.marker", "textobjects")
+			end)
+			vim.keymap.set({ "n", "x", "o" }, "[j", function()
+				move.goto_previous_start("@cell.marker", "textobjects")
+			end)
 
 			local select = require("nvim-treesitter-textobjects.select")
 			vim.keymap.set({ "x", "o" }, "af", function()

@@ -18,6 +18,7 @@ size = 12.0
 [keyboard]
 bindings = [
 { key = "Insert", mods = "Shift", action = "Paste" },
-{ key = "Insert", mods = "Control", action = "Copy" }
+{ key = "Insert", mods = "Control", action = "Copy" },
+{ key = "Enter", mods = "Control", chars = "\u001b[27;5;13~" }
 ]
 

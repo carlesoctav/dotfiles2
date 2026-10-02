@@ -5,6 +5,10 @@ return {
 			require('gitsigns').setup({
 				sign_priority = 100,
 				on_attach = function(bufnr)
+					-- jupytext.nvim converts .ipynb buffers; gitsigns can't handle them
+					if vim.api.nvim_buf_get_name(bufnr):match('%.ipynb$') then
+						return false
+					end
 					local gitsigns = require('gitsigns')
 					local function map(mode, l, r, opts)
 						opts = opts or {}

@@ -1,2 +1,3 @@
 .git
 .config/gcloud/logs/
+.config/nvim/.venv/

@@ -7,6 +7,7 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "disable_ai": true,
   "project_panel": {
     "dock": "left"
   },
@@ -145,6 +146,21 @@
       "host": "colab",
       "args": [],
       "projects": [
+        {
+          "paths": [
+            "/content"
+          ]
+        },
+        {
+          "paths": [
+            "/content/llm"
+          ]
+        },
+        {
+          "paths": [
+            "/content/try-agent"
+          ]
+        },
         {
           "paths": [
             "/root"

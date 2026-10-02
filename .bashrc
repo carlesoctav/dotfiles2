@@ -132,6 +132,7 @@ export MANPAGER="nvim +Man!"
 alias vi="nvim ."
 alias tldrf='tldr --list | fzf --preview "tldr --color {1}" --preview-window=right:70% | xargs tldr --color'
 alias leet='nvim leetcode.nvim'
+alias lg='nvim leetgpu'
 alias dlogs='docker ps --format "{{.Names}}" | fzf | xargs -r docker logs -f --tail 200'
 alias dexec='container=$(docker ps --format "{{.Names}}" | fzf) && [ -n "$container" ] && docker exec -it "$container" bash'
 alias rtc='systemctl --user restart touchcursor.service'
@@ -165,3 +166,11 @@ rssh() {
 
 # Added by Antigravity CLI installer
 export PATH="/home/carlesoctav/.local/bin:$PATH"
+export PATH="$HOME/.TinyTeX/bin/x86_64-linux:$PATH"
+. "$HOME/.cargo/env"
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/home/carlesoctav/dotfiles2/fedora-tasks/google-cloud-sdk/path.bash.inc' ]; then . '/home/carlesoctav/dotfiles2/fedora-tasks/google-cloud-sdk/path.bash.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/home/carlesoctav/dotfiles2/fedora-tasks/google-cloud-sdk/completion.bash.inc' ]; then . '/home/carlesoctav/dotfiles2/fedora-tasks/google-cloud-sdk/completion.bash.inc'; fi
