@@ -13,7 +13,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 curl https://mise.run | sh
 curl -fsSL https://opencode.ai/install | bash
 curl -fsSL https://antigravity.google/cli/install.sh | bash
-curl -fsSL https://meta.ai | bash
+curl -fsSL https://dev.meta.ai/install.sh | bash
 
 ./ibm_fonts.sh
 
