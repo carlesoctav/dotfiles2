@@ -121,10 +121,6 @@ else
   fi
 fi
 
-"$aven_exe" --db "$db_path" note "$task_id" --stdin <<EOF
-Opened via workmux-open: agent=${agent:-none} worktree=$worktree prompt logged in worktree.
-EOF
-
 printf 'workmux-open: opened %s (agent=%s worktree=%s)\n' "$task_ref" "${agent:-none}" "$worktree" >&2
 
 if [[ -z ${TMUX:-} && -n $target_session ]] && tmux has-session -t "$target_session" 2>/dev/null; then
