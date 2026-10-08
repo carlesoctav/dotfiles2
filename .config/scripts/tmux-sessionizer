@@ -1,29 +1,66 @@
 #!/usr/bin/env bash
 
-if [[ $# -eq 1 ]]; then
-    selected=$1
-else
-    selected=$(find ~ ~/personal ~/work ~/.config ~/.local ~/dotfiles2/.config ~/dotfiles2 /mnt/carles -mindepth 1 -maxdepth 1 -type d 2>/dev/null | fzf)
-fi
+# Legacy naming: last two path segments joined with '_' (dots become '_').
+legacy_session_name() {
+    echo "$1" | rev | cut -d'/' -f1-2 | rev | tr '/.' '_'
+}
 
-if [[ -z $selected ]]; then
-    exit 0
-fi
+# Session name for a directory. Workmux worktrees (<parent>/<project>__worktrees/<handle>)
+# mimic this script's own shape: <sessionizer-name-of-project-root>_<handle>.
+# The main worktree and everything else keep the legacy name, so master stays
+# just [xxxx] while worktrees become [xxxx]_[worktree_name].
+session_name_for() {
+    local dir=${1%/}
+    local ancestor=$dir parent project project_root base
+    while [[ -n $ancestor && $ancestor != / ]]; do
+        parent=$(dirname "$ancestor")
+        if [[ $(basename "$parent") == *__worktrees ]]; then
+            project=${parent##*/}
+            project=${project%__worktrees}
+            project_root=$(dirname "$parent")/$project
+            if [[ -d $project_root ]]; then
+                base=$(legacy_session_name "$project_root")
+                echo "${base}_$(basename "$ancestor")"
+                return 0
+            fi
+            break
+        fi
+        ancestor=$parent
+    done
+    legacy_session_name "$dir"
+}
 
-selected_name=$(echo "$selected" | rev | cut -d'/' -f1-2 | rev | tr '/.' '_')
-tmux_running=$(pgrep tmux)
+main() {
+    local selected selected_name tmux_running
+    if [[ $# -eq 1 ]]; then
+        selected=$1
+    else
+        selected=$(find ~ ~/personal ~/work ~/.config ~/.local ~/dotfiles2/.config ~/dotfiles2 /mnt/carles -mindepth 1 -maxdepth 1 -type d 2>/dev/null | fzf)
+    fi
 
-if [[ -z $TMUX ]] && [[ -z $tmux_running ]]; then
-    tmux new-session -s $selected_name -c $selected
-    exit 0
-fi
+    if [[ -z $selected ]]; then
+        exit 0
+    fi
 
-if ! tmux has-session -t=$selected_name 2> /dev/null; then
-    tmux new-session -ds $selected_name -c $selected
-fi
+    selected_name=$(session_name_for "$selected")
+    tmux_running=$(pgrep tmux)
 
-if [[ -z $TMUX ]]; then
-    tmux attach -t $selected_name
-else
-    tmux switch-client -t $selected_name
+    if [[ -z $TMUX ]] && [[ -z $tmux_running ]]; then
+        tmux new-session -s "$selected_name" -c "$selected"
+        exit 0
+    fi
+
+    if ! tmux has-session -t="$selected_name" 2> /dev/null; then
+        tmux new-session -ds "$selected_name" -c "$selected"
+    fi
+
+    if [[ -z $TMUX ]]; then
+        tmux attach -t "$selected_name"
+    else
+        tmux switch-client -t "$selected_name"
+    fi
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main "$@"
 fi

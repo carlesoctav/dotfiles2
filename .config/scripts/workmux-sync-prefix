@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# workmux-sync-prefix [project-root]
+#
+# Meta-template for workmux `window_prefix`: derives the sessionizer-style
+# base name from the project root (<parent>_<project>, dots become '_') and
+# writes `window_prefix: "<base>_"` into <root>/.workmux.yaml, so workmux
+# session targets come out as <base>_<handle> -- the same names
+# tmux-sessionizer computes for those worktrees.
+#
+# workmux itself only supports {project} in window_prefix, which cannot
+# express this; hence the value is rendered per project by this script.
+# Re-run after moving/renaming the project directory. Existing window_prefix
+# lines are replaced in place; every other config line is preserved.
+set -euo pipefail
+
+root=${1:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}
+root=${root%/}
+base=$(echo "$root" | rev | cut -d'/' -f1-2 | rev | tr '/.' '_')
+prefix="${base}_"
+cfg=$root/.workmux.yaml
+
+if [[ -f $cfg ]] && grep -qE '^[[:space:]]*window_prefix:' "$cfg"; then
+    sed -i -E "s|^[[:space:]]*window_prefix:.*|window_prefix: \"$prefix\"|" "$cfg"
+else
+    printf '\n# Rendered by workmux-sync-prefix: <sessionizer-base>_ + handle.\nwindow_prefix: "%s"\n' "$prefix" >>"$cfg"
+fi
+
+printf 'workmux-sync-prefix: %s -> window_prefix "%s"\n' "$cfg" "$prefix"
