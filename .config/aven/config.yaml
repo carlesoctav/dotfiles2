@@ -1,0 +1,109 @@
+local:
+  db_path: null
+  blob_dir: null
+  inline_images: auto
+  image_optimization: off
+  attachment_lifecycle:
+    grace_days: 7
+    quota_bytes: 10737418240
+    preview_quota_bytes: 536870912
+    maintenance_limit: 128
+sync:
+  enabled: false
+  interval_seconds: 30
+  qr_glyphs: auto
+daemon:
+  wake_addr: 127.0.0.1:47631
+workspace:
+  default: null
+  routes: []
+project:
+  overrides:
+    # aven-managed project path mapping
+    - workspace_id: '0000000000000000'
+      workspace: default
+      project: dotfiles2
+      paths:
+        - /home/carlesoctav/dotfiles2
+    # aven-managed project path mapping
+    - workspace_id: '0000000000000000'
+      workspace: default
+      project: agents
+      paths:
+        - /home/carlesoctav/agents/.agents
+        - /home/carlesoctav/agents
+agent:
+  task_intake:
+    command: null
+    args:
+    - -p
+    - --no-session-persistence
+    - --bare
+    - '{prompt}'
+    timeout_seconds: 45
+    system_prompt: null
+update:
+  automatic_checks: true
+tui:
+  table:
+    columns:
+    - ref
+    - title
+    - labels
+    - metadata
+    - project
+    - status
+    - priority
+    - time
+    compact_status: false
+  sidebar:
+    views:
+    - queue
+    - ready
+    - blocked
+    - overdue
+    - all
+    - open
+    - inbox
+    - active
+    - backlog
+    - todo
+    - upcoming
+    - done
+    - conflicts
+    - epics
+    - recurring
+    - recent_actions
+    - search
+  columns:
+  - name: Inbox
+    statuses:
+    - inbox
+  - name: Backlog
+    statuses:
+    - backlog
+  - name: Todo
+    statuses:
+    - todo
+  - name: Active
+    statuses:
+    - active
+  - name: Done
+    statuses:
+    - done
+    - canceled
+  commands:
+    - name: workmux-open
+      description: Open focused task worktree (create if missing) and copy prompt
+      program: ~/.config/aven/commands/workmux-open
+      keys: [z Enter]
+      target: focused
+      execution: terminal
+      on_success: refresh
+    - name: copy-prompt
+      description: Copy focused task prompt to clipboard
+      program: ~/.config/aven/commands/copy-prompt
+      keys: [y y]
+      target: focused
+      execution: terminal
+      on_success: stay

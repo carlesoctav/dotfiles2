@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# aven command (y y): copy the dispatch prompt for the focused task.
+#
+# No worktree, no editor, no side effects: builds the default prompt
+# template and copies it to the clipboard (+tmux buffer) so you can paste it
+# into your agent later.
+set -euo pipefail
+
+context=${AVEN_COMMAND_CONTEXT:?AVEN_COMMAND_CONTEXT is required}
+if [[ ! -f $context || ! -r $context ]]; then
+  printf 'copy-prompt: AVEN_COMMAND_CONTEXT is not a readable file.\n' >&2
+  exit 2
+fi
+
+for dep in jq; do
+  if ! command -v "$dep" >/dev/null 2>&1; then
+    printf 'copy-prompt: required command not found: %s\n' "$dep" >&2
+    exit 2
+  fi
+done
+
+if ! jq -e '.version == 1 and (.targeting.targets | type == "array" and length == 1)' "$context" >/dev/null; then
+  printf 'copy-prompt: select exactly one Aven task.\n' >&2
+  exit 2
+fi
+
+task_ref=$(jq -er '.targeting.targets[0].ref | select(type == "string" and test("^[A-Za-z0-9-]+$"))' "$context") || {
+  printf 'copy-prompt: selected task has no valid display reference.\n' >&2
+  exit 2
+}
+
+prompt="please work on this task $task_ref.
+
+aven awareness (required): aven is this workspace's local task manager.
+- Run 'aven prime' for agent guidance plus live work, and 'aven context $task_ref' for this task.
+- Mark the task active: aven edit $task_ref --status active
+- Leave handoff context when done or blocked with: aven note $task_ref --stdin (append-style notes), starting your note with [agent]"
+
+clipboard_ok=0
+if command -v wl-copy >/dev/null 2>&1; then
+  if printf '%s' "$prompt" | wl-copy 2>/dev/null; then clipboard_ok=1; fi
+fi
+if ((clipboard_ok == 0)) && command -v xclip >/dev/null 2>&1; then
+  if printf '%s' "$prompt" | xclip -selection clipboard 2>/dev/null; then clipboard_ok=1; fi
+fi
+if ((clipboard_ok == 0)) && command -v xsel >/dev/null 2>&1; then
+  if printf '%s' "$prompt" | xsel --clipboard --input 2>/dev/null; then clipboard_ok=1; fi
+fi
+if ((clipboard_ok == 0)) && command -v pbcopy >/dev/null 2>&1; then
+  if printf '%s' "$prompt" | pbcopy 2>/dev/null; then clipboard_ok=1; fi
+fi
+if command -v tmux >/dev/null 2>&1; then
+  tmux set-buffer -b dispatch-prompt "$prompt" 2>/dev/null || true
+fi
+
+if ((clipboard_ok)); then
+  printf 'copy-prompt: prompt for %s copied to clipboard\n' "$task_ref" >&2
+else
+  printf 'copy-prompt: no clipboard tool worked (tried wl-copy, xclip, xsel, pbcopy); prompt printed below for manual copy\n---\n%s\n---\n' "$prompt" >&2
+fi

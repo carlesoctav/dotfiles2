@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# aven command (z Enter): open-or-create the focused task's workmux worktree.
+# aven command (z Enter): open-or-create the focused task's workmux worktree,
+# then copy the dispatch prompt to the clipboard.
 #
-# Zero-prompt fast path of workmux-add: worktree name is the lowercase task
-# ref, the prompt is the default template (no $EDITOR), and the agent is the
-# first available of (muse, agy) with no picker. Targets the current tmux
-# session (or ctrl+f project session). `workmux add --open-if-exists` creates
-# the worktree when missing and switches to it when it exists (like `tmux new -A`),
-# with fallback to `workmux open` for main/master worktrees.
+# Minimal flow: type worktree name (default: branch stored on the task, else
+# lowercase task ref) -> store it on the task -> run plain
+# `workmux add <name> --open-if-exists` (no -p/-a), falling back to
+# `workmux open` -> copy the prompt for pasting into your agent.
+#
+# Requires a running tmux server (start it before running aven).
 set -euo pipefail
 
 context=${AVEN_COMMAND_CONTEXT:?AVEN_COMMAND_CONTEXT is required}
@@ -69,16 +70,30 @@ if [[ ! -d $project_dir ]]; then
   exit 1
 fi
 
-# No prompts: name after the task, default prompt text, first available agent.
-worktree=$(tr '[:upper:]' '[:lower:]' <<<"$task_ref")
-prompt="please work on this task $task_ref, document your progress on ./logs/project/$task_ref/timeline.md, and later put notes so another agent aware of ur try"
-agent=''
-for candidate in muse agy; do
-  if command -v "$candidate" >/dev/null 2>&1; then
-    agent=$candidate
-    break
-  fi
-done
+# Branch prompt: default to the branch stored on the task (if any), else the
+# lowercase task ref — so this always opens the correct branch.
+stored_worktree=$("$aven_exe" --db "$db_path" show "$task_id" --full --json 2>/dev/null | jq -r '.metadata["workmux-worktree"] // empty' || true)
+default_name=${stored_worktree:-$(tr '[:upper:]' '[:lower:]' <<<"$task_ref")}
+printf 'worktree [%s]: ' "$default_name" >&2
+worktree=
+IFS= read -r worktree || true
+worktree=${worktree:-$default_name}
+if [[ -z $worktree ]]; then
+  printf 'workmux-open: worktree name cannot be empty.\n' >&2
+  exit 1
+fi
+
+# Remember the branch on the task for next time.
+"$aven_exe" --db "$db_path" edit "$task_id" --metadata "workmux-worktree=$worktree" || {
+  printf 'workmux-open: warning: could not store branch on %s.\n' "$task_ref" >&2
+}
+
+prompt="please work on this task $task_ref.
+
+aven awareness (required): aven is this workspace's local task manager.
+- Run 'aven prime' for agent guidance plus live work, and 'aven context $task_ref' for this task.
+- Mark the task active: aven edit $task_ref --status active
+- Leave handoff context when done or blocked with: aven note $task_ref --stdin (append-style notes), starting your note with [agent]"
 
 # Resolve target tmux session: current session if inside tmux,
 # or project session via tmux-sessionizer if outside tmux.
@@ -109,19 +124,54 @@ if [[ -n $target_session ]]; then
 fi
 
 cd "$project_dir"
-# --mode window is required (see workmux-add): old worktrees still store
-# mode=session, which rejects --parent-session without this override.
-if [[ -n $agent ]]; then
-  if ! workmux add "$worktree" -p "$prompt" -a "$agent" --open-if-exists --mode window "${parent_session_args[@]}"; then
-    workmux open "$worktree" -p "$prompt" --mode window "${parent_session_args[@]}"
-  fi
-else
-  if ! workmux add "$worktree" -p "$prompt" --open-if-exists --mode window "${parent_session_args[@]}"; then
-    workmux open "$worktree" -p "$prompt" --mode window "${parent_session_args[@]}"
-  fi
+
+# Plain worktree create-or-open: no -p/-a.
+# --mode window is required, not just --parent-session: worktrees created
+# before the window-mode migration still have mode=session stored in git
+# config, and workmux rejects --parent-session for them. The override also
+# self-migrates the stored mode on success.
+if ! workmux add "$worktree" --open-if-exists --mode window "${parent_session_args[@]}"; then
+  workmux open "$worktree" --mode window "${parent_session_args[@]}"
 fi
 
-printf 'workmux-open: opened %s (agent=%s worktree=%s)\n' "$task_ref" "${agent:-none}" "$worktree" >&2
+# Copy the prompt to the clipboard for instant pasting into your agent.
+# Try each clipboard tool until one succeeds; mirror into the tmux buffer
+# too so prefix-] works inside tmux even without a system clipboard.
+clipboard_ok=0
+if command -v wl-copy >/dev/null 2>&1; then
+  if printf '%s' "$prompt" | wl-copy 2>/dev/null; then clipboard_ok=1; fi
+fi
+if ((clipboard_ok == 0)) && command -v xclip >/dev/null 2>&1; then
+  if printf '%s' "$prompt" | xclip -selection clipboard 2>/dev/null; then clipboard_ok=1; fi
+fi
+if ((clipboard_ok == 0)) && command -v xsel >/dev/null 2>&1; then
+  if printf '%s' "$prompt" | xsel --clipboard --input 2>/dev/null; then clipboard_ok=1; fi
+fi
+if ((clipboard_ok == 0)) && command -v pbcopy >/dev/null 2>&1; then
+  if printf '%s' "$prompt" | pbcopy 2>/dev/null; then clipboard_ok=1; fi
+fi
+if command -v tmux >/dev/null 2>&1; then
+  tmux set-buffer -b dispatch-prompt "$prompt" 2>/dev/null || true
+fi
+
+# Keep a copy of the prompt in the worktree for the record (best effort).
+wt_path=$(workmux path "$worktree" 2>/dev/null || true)
+if [[ -n ${wt_path:-} && -d $wt_path ]]; then
+  mkdir -p "$wt_path/.workmux"
+  printf '%s\n' "$prompt" >"$wt_path/.workmux/PROMPT-$worktree.md" || true
+fi
+
+if ((clipboard_ok)); then
+  printf 'workmux-open: prompt copied to clipboard — paste it into your agent in %s\n' "$worktree" >&2
+else
+  printf 'workmux-open: no clipboard tool worked (tried wl-copy, xclip, xsel, pbcopy); prompt printed below for manual copy\n---\n%s\n---\n' "$prompt" >&2
+fi
+
+"$aven_exe" --db "$db_path" note "$task_id" --stdin <<EOF
+Opened via workmux-open: worktree=$worktree prompt copied to clipboard (branch stored on task).
+EOF
+
+printf 'workmux-open: opened %s (worktree=%s)\n' "$task_ref" "$worktree" >&2
 
 if [[ -z ${TMUX:-} && -n $target_session ]] && tmux has-session -t "$target_session" 2>/dev/null; then
   exec tmux attach -t "$target_session"
