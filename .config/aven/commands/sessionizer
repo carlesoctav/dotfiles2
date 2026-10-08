@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# aven command (z f): same as shell Ctrl+F — pick a directory with
+# tmux-sessionizer and jump to its tmux session.
+#
+# Runs tmux-sessionizer directly (terminal execution gives it the full
+# terminal for fzf). Canceling the picker exits 0, so the TUI stays.
+set -euo pipefail
+
+for dep in tmux fzf tmux-sessionizer; do
+  if ! command -v "$dep" >/dev/null 2>&1; then
+    printf 'sessionizer: required command not found: %s\n' "$dep" >&2
+    exit 2
+  fi
+done
+
+exec tmux-sessionizer "$@"

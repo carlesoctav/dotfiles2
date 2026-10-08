@@ -107,9 +107,9 @@ tui:
       target: focused
       execution: terminal
       on_success: stay
-    - name: fzf-find
-      description: Fuzzy-find tasks with fzf
-      program: ~/.config/aven/commands/fzf-find
+    - name: sessionizer
+      description: Pick a directory and jump to its tmux session (like shell Ctrl+F)
+      program: ~/.config/aven/commands/sessionizer
       keys: [z f]
       target: none
       execution: terminal
