@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# aven command (z w): open `workmux dashboard` from the focused task's
+# project directory (`cd <path> && workmux dashboard`).
+#
+# workmux dashboard takes no path flag (verified in workmux source: scope is
+# only all-agents vs current-session), so this resolves the directory and
+# launches the dashboard there; filter by hand with `/` or `F` once open.
+set -euo pipefail
+
+context=${AVEN_COMMAND_CONTEXT:?AVEN_COMMAND_CONTEXT is required}
+if [[ ! -f $context || ! -r $context ]]; then
+  printf 'workmux-dashboard-here: AVEN_COMMAND_CONTEXT is not a readable file.\n' >&2
+  exit 2
+fi
+
+for dep in jq aven workmux; do
+  if ! command -v "$dep" >/dev/null 2>&1; then
+    printf 'workmux-dashboard-here: required command not found: %s\n' "$dep" >&2
+    exit 2
+  fi
+done
+
+if ! jq -e '.version == 1 and (.targeting.targets | type == "array" and length == 1)' "$context" >/dev/null; then
+  printf 'workmux-dashboard-here: select exactly one Aven task.\n' >&2
+  exit 2
+fi
+
+task_id=$(jq -er '.targeting.targets[0].id | select(type == "string" and test("^[A-Za-z0-9]+$"))' "$context") || {
+  printf 'workmux-dashboard-here: selected task has no valid durable ID.\n' >&2
+  exit 2
+}
+task_ref=$(jq -er '.targeting.targets[0].ref // empty' "$context")
+project_key=$(jq -r '.selection.primary.project.key // empty' "$context")
+db_path=$(jq -er '.invocation.db_path | select(type == "string" and length > 0)' "$context") || {
+  printf 'workmux-dashboard-here: Aven did not provide its active database path.\n' >&2
+  exit 2
+}
+aven_exe=$(jq -r '.invocation.aven_exe // empty' "$context")
+if [[ -z $aven_exe ]]; then
+  aven_exe=$(command -v aven)
+fi
+
+project_dir=''
+if [[ -n $project_key ]]; then
+  project_dir=$("$aven_exe" --db "$db_path" project path list "$project_key" 2>/dev/null \
+    | sed -n 's/^[^ ]*[ ]*path="\(.*\)"$/\1/p' | head -n 1 || true)
+fi
+if [[ -z $project_dir ]]; then
+  task_json=$("$aven_exe" --db "$db_path" show "$task_id" --full --json 2>/dev/null || true)
+  if [[ -n ${task_json:-} ]]; then
+    linked_file=$(jq -r '.metadata.nvim_file // empty' <<<"$task_json")
+    if [[ -n $linked_file && $linked_file == /* ]]; then
+      project_dir=$(dirname "$linked_file")
+    fi
+  fi
+fi
+if [[ -z $project_dir ]]; then
+  project_dir=$(jq -r '.invocation.cwd // empty' "$context")
+fi
+if [[ ! -d $project_dir ]]; then
+  printf 'workmux-dashboard-here: could not resolve a project directory for %s, opening dashboard here.\n' "${task_ref:-task}" >&2
+  exec workmux dashboard
+fi
+
+cd "$project_dir"
+exec workmux dashboard

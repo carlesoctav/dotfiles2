@@ -44,7 +44,7 @@ mkdir -p "$OUTPUT_DIR"
 echo "🔍 Selecting repository..."
 
 # Step 1: Select repository using fzf
-selected_repo=$(find ~/personal ~/work ~/.config ~/.local ~/dotfiles/.config ~/dotfiles/ ~/learn -mindepth 1 -maxdepth 1 -type d 2>/dev/null | fzf --prompt="Select repository: " --height=40% --border)
+selected_repo=$(find ~/personal ~/work ~/.config ~/.local ~/dotfiles2/.config ~/dotfiles2 ~/learn -mindepth 1 -maxdepth 1 -type d 2>/dev/null | fzf --prompt="Select repository: " --height=40% --border)
 
 if [[ -z $selected_repo ]]; then
     echo "❌ No repository selected. Exiting."

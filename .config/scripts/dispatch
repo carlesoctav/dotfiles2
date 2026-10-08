@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+# dispatch <aven-ref> <worktree> [--dry-run]
+#
+# One-command bridge from aven to a workmux agent: renders the aven task and
+# delivers it as a prompt to the agent running in the worktree. Tracked agents
+# go through `workmux send`; untracked ones (e.g. muse panes) via tmux paste.
+#
+# On a real dispatch the aven task is marked active and a note records where
+# it went. --dry-run prints the exact prompt and changes nothing.
+set -euo pipefail
+
+usage() {
+	cat <<'EOF'
+Usage: dispatch <aven-ref> <worktree> [--dry-run]
+
+  <aven-ref>  Aven task ref, e.g. DTF-66ES
+  <worktree>  Workmux worktree name (directory name, see `workmux list`)
+  --dry-run   Print the prompt without sending anything or touching aven
+EOF
+}
+
+DRY_RUN=false
+REF=""
+WORKTREE=""
+for arg in "$@"; do
+	case "$arg" in
+	-h | --help)
+		usage
+		exit 0
+		;;
+	--dry-run)
+		DRY_RUN=true
+		;;
+	*)
+		if [[ -z "$REF" ]]; then
+			REF="$arg"
+		elif [[ -z "$WORKTREE" ]]; then
+			WORKTREE="$arg"
+		else
+			echo "Error: unexpected argument '$arg'." >&2
+			usage >&2
+			exit 1
+		fi
+		;;
+	esac
+done
+
+if [[ -z "$REF" || -z "$WORKTREE" ]]; then
+	usage >&2
+	exit 1
+fi
+
+# --- Validate aven ref (also renders the prompt body) ---
+CONTEXT=$(aven context "$REF" 2>&1) || {
+	echo "Error: cannot read aven task '$REF'." >&2
+	echo "$CONTEXT" >&2
+	exit 1
+}
+
+# --- Validate worktree ---
+if ! workmux path "$WORKTREE" >/dev/null 2>&1; then
+	echo "Error: unknown workmux worktree '$WORKTREE'. See 'workmux list'." >&2
+	exit 1
+fi
+
+PROMPT="Work this aven task, then report back here when done.
+
+=== aven $REF ===
+$CONTEXT"
+
+if $DRY_RUN; then
+	printf '%s\n' "$PROMPT"
+	exit 0
+fi
+
+CHANNEL=""
+# --- Preferred: tracked agent via workmux send ---
+if printf '%s' "$PROMPT" | workmux send "$WORKTREE" 2>/dev/null; then
+	CHANNEL="workmux-send"
+else
+	# --- Fallback: untracked agent pane via tmux ---
+	if [[ -z "${TMUX:-}" ]]; then
+		echo "Error: no tracked agent in '$WORKTREE' and not inside tmux for fallback." >&2
+		exit 1
+	fi
+	DIR=$(workmux path "$WORKTREE")
+	PANE=$(tmux list-panes -a -F '#{pane_id} #{pane_current_path} #{pane_current_command}' |
+		awk -v d="$DIR" '$2 == d && $3 ~ /^(muse|claude|codex|agy|gemini|grove|copilot|opencode|pi|omp)$/ { print $1; exit }')
+	if [[ -z "${PANE:-}" ]]; then
+		echo "Error: no tracked agent and no agent pane (muse/claude/codex/agy/...) found in '$WORKTREE'." >&2
+		echo "Start an agent there first, then retry." >&2
+		exit 1
+	fi
+	tmux set-buffer -b dispatch-prompt "$PROMPT"
+	tmux paste-buffer -b dispatch-prompt -t "$PANE"
+	tmux send-keys -t "$PANE" Enter
+	CHANNEL="tmux-fallback($PANE)"
+fi
+
+# --- Record on the aven task (source of truth) ---
+aven edit "$REF" --status active >/dev/null
+aven note "$REF" --stdin <<EOF
+Dispatched to worktree $WORKTREE via dispatch ($CHANNEL).
+EOF
+
+echo "Dispatched $REF to '$WORKTREE' ($CHANNEL)."

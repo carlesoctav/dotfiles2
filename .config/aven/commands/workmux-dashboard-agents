@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# aven command (z s): open `workmux dashboard` directly on the agents tab.
+set -euo pipefail
+
+if ! command -v workmux >/dev/null 2>&1; then
+  printf 'workmux-dashboard-agents: required command not found: workmux\n' >&2
+  exit 2
+fi
+
+exec workmux dashboard --tab agents

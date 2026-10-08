@@ -1,0 +1,4 @@
+# workmux project config for dotfiles2
+# Session mode: each worktree gets its own tmux session
+# instead of a window in the current session.
+mode: session
