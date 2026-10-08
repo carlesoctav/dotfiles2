@@ -127,6 +127,12 @@ PATH="$PATH":"$HOME/.config/scripts:$HOME/tpu-commands"
 # now i know 
 bind -x '"\C-f":"tmux-sessionizer"'
 
+# Disable XON/XOFF flow control so Ctrl+S (0x13) reaches apps inside tmux
+# instead of freezing terminal output. TUI apps that use raw mode (e.g. aven)
+# already clear IXON themselves; this covers the shell prompt and all other
+# programs. Use Ctrl+Q / `stty ixon` temporarily if you ever need XOFF back.
+stty -ixon 2>/dev/null || true
+
 export MANPAGER="nvim +Man!"
 
 alias vi="nvim ."
