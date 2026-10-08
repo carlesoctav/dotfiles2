@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# aven command (z s): open `workmux dashboard` directly on the agents tab.
+# aven command (z s): open `workmux dashboard` directly on the agents tab
+# via tmux display-popup inside tmux.
 set -euo pipefail
 
 if ! command -v workmux >/dev/null 2>&1; then
@@ -7,4 +8,43 @@ if ! command -v workmux >/dev/null 2>&1; then
   exit 2
 fi
 
-exec workmux dashboard --tab agents
+# Try to resolve project directory from context if provided
+project_dir=''
+context=${AVEN_COMMAND_CONTEXT:-}
+if [[ -n $context && -f $context && -r $context ]]; then
+  project_dir=$(jq -r '.invocation.cwd // empty' "$context" 2>/dev/null || true)
+fi
+if [[ -z $project_dir || ! -d $project_dir ]]; then
+  project_dir=$PWD
+fi
+
+# Inside tmux: use tmux display-popup for a clean floating agents modal
+if [[ -n ${TMUX:-} ]]; then
+  exec tmux display-popup -E -w 85% -h 85% -d "$project_dir" -T " Workmux Agents " workmux dashboard --tab agents
+fi
+
+# Outside tmux: attach-or-create session
+if ! command -v tmux >/dev/null 2>&1; then
+  printf 'workmux-dashboard-agents: required command not found: tmux\n' >&2
+  exit 2
+fi
+
+session_for_dir() {
+  local dir=$1 candidate sessionizer='' self_dir
+  self_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+  for candidate in "$self_dir/../../scripts/tmux-sessionizer" "$HOME/.config/scripts/tmux-sessionizer"; do
+    if [[ -f $candidate ]]; then sessionizer=$candidate; break; fi
+  done
+  if [[ -n $sessionizer ]]; then
+    # shellcheck disable=SC1090
+    . "$sessionizer"
+    if command -v session_name_for >/dev/null 2>&1; then
+      session_name_for "$dir"
+      return 0
+    fi
+  fi
+  basename "$dir" | tr '/.:' '_'
+}
+
+session=$(session_for_dir "$project_dir")
+exec tmux new-session -A -s "$session" -c "$project_dir" workmux dashboard --tab agents

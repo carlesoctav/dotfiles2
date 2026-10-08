@@ -3,8 +3,9 @@
 #
 # Flow: pick agent (muse/agy via binary availability, fzf) -> type worktree
 # name (default: lowercase task ref) -> edit prefilled prompt in $EDITOR ->
-# run `workmux add <name> -p <prompt> -a <agent> --open-if-exists` from the
-# task's project directory -> leave an aven note as handoff context.
+# run `workmux add <name> -p <prompt> -a <agent> --open-if-exists` targeting
+# the current tmux session (or ctrl+f project session) from the task's
+# project directory -> leave an aven note as handoff context.
 set -euo pipefail
 
 context=${AVEN_COMMAND_CONTEXT:?AVEN_COMMAND_CONTEXT is required}
@@ -110,11 +111,45 @@ if [[ -z ${prompt//[[:space:]]/} ]]; then
   exit 1
 fi
 
+# Resolve target tmux session: current session if inside tmux,
+# or project session via tmux-sessionizer if outside tmux.
+target_session=''
+if [[ -n ${TMUX:-} ]]; then
+  target_session=$(tmux display-message -p '#S' 2>/dev/null || true)
+else
+  sessionizer=''
+  self_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+  for candidate in "$self_dir/../../scripts/tmux-sessionizer" "$HOME/.config/scripts/tmux-sessionizer"; do
+    if [[ -f $candidate ]]; then sessionizer=$candidate; break; fi
+  done
+  if [[ -n $sessionizer ]]; then
+    # shellcheck disable=SC1090
+    . "$sessionizer"
+    if command -v session_name_for >/dev/null 2>&1; then
+      target_session=$(session_name_for "$project_dir")
+    fi
+  fi
+  if [[ -z $target_session ]]; then
+    target_session=$(basename "$project_dir" | tr '/.:' '_')
+  fi
+fi
+
+parent_session_args=()
+if [[ -n $target_session ]]; then
+  parent_session_args=(--parent-session "$target_session")
+fi
+
 cd "$project_dir"
-workmux add "$worktree" -p "$prompt" -a "$agent" --open-if-exists
+if ! workmux add "$worktree" -p "$prompt" -a "$agent" --open-if-exists "${parent_session_args[@]}"; then
+  workmux open "$worktree" -p "$prompt" "${parent_session_args[@]}"
+fi
 
 "$aven_exe" --db "$db_path" note "$task_id" --stdin <<EOF
 Dispatched via workmux-add: agent=$agent worktree=$worktree prompt logged in worktree.
 EOF
 
 printf 'workmux-add: dispatched %s to agent=%s worktree=%s\n' "$task_ref" "$agent" "$worktree" >&2
+
+if [[ -z ${TMUX:-} && -n $target_session ]] && tmux has-session -t "$target_session" 2>/dev/null; then
+  exec tmux attach -t "$target_session"
+fi

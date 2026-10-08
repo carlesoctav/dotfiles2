@@ -3,9 +3,10 @@
 #
 # Zero-prompt fast path of workmux-add: worktree name is the lowercase task
 # ref, the prompt is the default template (no $EDITOR), and the agent is the
-# first available of (muse, agy) with no picker. `workmux add
-# --open-if-exists` creates the worktree when missing and switches to it when
-# it exists (like `tmux new -A`); run from inside tmux, the client follows.
+# first available of (muse, agy) with no picker. Targets the current tmux
+# session (or ctrl+f project session). `workmux add --open-if-exists` creates
+# the worktree when missing and switches to it when it exists (like `tmux new -A`),
+# with fallback to `workmux open` for main/master worktrees.
 set -euo pipefail
 
 context=${AVEN_COMMAND_CONTEXT:?AVEN_COMMAND_CONTEXT is required}
@@ -79,11 +80,43 @@ for candidate in muse agy; do
   fi
 done
 
+# Resolve target tmux session: current session if inside tmux,
+# or project session via tmux-sessionizer if outside tmux.
+target_session=''
+if [[ -n ${TMUX:-} ]]; then
+  target_session=$(tmux display-message -p '#S' 2>/dev/null || true)
+else
+  sessionizer=''
+  self_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+  for candidate in "$self_dir/../../scripts/tmux-sessionizer" "$HOME/.config/scripts/tmux-sessionizer"; do
+    if [[ -f $candidate ]]; then sessionizer=$candidate; break; fi
+  done
+  if [[ -n $sessionizer ]]; then
+    # shellcheck disable=SC1090
+    . "$sessionizer"
+    if command -v session_name_for >/dev/null 2>&1; then
+      target_session=$(session_name_for "$project_dir")
+    fi
+  fi
+  if [[ -z $target_session ]]; then
+    target_session=$(basename "$project_dir" | tr '/.:' '_')
+  fi
+fi
+
+parent_session_args=()
+if [[ -n $target_session ]]; then
+  parent_session_args=(--parent-session "$target_session")
+fi
+
 cd "$project_dir"
 if [[ -n $agent ]]; then
-  workmux add "$worktree" -p "$prompt" -a "$agent" --open-if-exists
+  if ! workmux add "$worktree" -p "$prompt" -a "$agent" --open-if-exists "${parent_session_args[@]}"; then
+    workmux open "$worktree" -p "$prompt" "${parent_session_args[@]}"
+  fi
 else
-  workmux add "$worktree" -p "$prompt" --open-if-exists
+  if ! workmux add "$worktree" -p "$prompt" --open-if-exists "${parent_session_args[@]}"; then
+    workmux open "$worktree" -p "$prompt" "${parent_session_args[@]}"
+  fi
 fi
 
 "$aven_exe" --db "$db_path" note "$task_id" --stdin <<EOF
@@ -91,3 +124,7 @@ Opened via workmux-open: agent=${agent:-none} worktree=$worktree prompt logged i
 EOF
 
 printf 'workmux-open: opened %s (agent=%s worktree=%s)\n' "$task_ref" "${agent:-none}" "$worktree" >&2
+
+if [[ -z ${TMUX:-} && -n $target_session ]] && tmux has-session -t "$target_session" 2>/dev/null; then
+  exec tmux attach -t "$target_session"
+fi
