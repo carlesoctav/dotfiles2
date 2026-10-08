@@ -167,10 +167,6 @@ else
   printf 'workmux-open: no clipboard tool worked (tried wl-copy, xclip, xsel, pbcopy); prompt printed below for manual copy\n---\n%s\n---\n' "$prompt" >&2
 fi
 
-"$aven_exe" --db "$db_path" note "$task_id" --stdin <<EOF
-Opened via workmux-open: worktree=$worktree prompt copied to clipboard (branch stored on task).
-EOF
-
 printf 'workmux-open: opened %s (worktree=%s)\n' "$task_ref" "$worktree" >&2
 
 if [[ -z ${TMUX:-} && -n $target_session ]] && tmux has-session -t "$target_session" 2>/dev/null; then
