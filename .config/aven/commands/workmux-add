@@ -140,8 +140,12 @@ if [[ -n $target_session ]]; then
 fi
 
 cd "$project_dir"
-if ! workmux add "$worktree" -p "$prompt" -a "$agent" --open-if-exists "${parent_session_args[@]}"; then
-  workmux open "$worktree" -p "$prompt" "${parent_session_args[@]}"
+# --mode window is required, not just --parent-session: worktrees created
+# before the window-mode migration still have mode=session stored in git
+# config, and workmux rejects --parent-session for them. The override also
+# self-migrates the stored mode on success.
+if ! workmux add "$worktree" -p "$prompt" -a "$agent" --open-if-exists --mode window "${parent_session_args[@]}"; then
+  workmux open "$worktree" -p "$prompt" --mode window "${parent_session_args[@]}"
 fi
 
 "$aven_exe" --db "$db_path" note "$task_id" --stdin <<EOF

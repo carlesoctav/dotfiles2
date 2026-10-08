@@ -73,3 +73,62 @@ Ask:
    `workmux add master --open-if-exists` works when `--parent-session` is provided in window mode. If git/workmux ever rejects `add master`, the scripts automatically fall back to `workmux open master`.
 4. Popups:
    Dashboards (`zw`, `zs`) use `tmux display-popup -E`. In tmux, pressing `q` or `Esc` closes the popup. Selecting a worktree jumps to the window and automatically closes the popup because workmux's default is `dashboard.close_on_jump: true`.
+
+## 2026-10-08 — root-cause fix (agent: muse, worktree dt2-z6dm)
+
+Root cause of both reported failures: workmux stores per-worktree mode in
+git config (`workmux.worktree.<name>.mode`). Every worktree created before
+the window-mode migration still has `mode=session` stored (including the
+main checkout as handle `dotfiles2`, i.e. `master`). `workmux add
+--open-if-exists` on an existing worktree delegates to `open`, which uses
+the STORED mode with `mode_override=None` — so `--parent-session` is
+rejected with `--parent-session requires window mode`. Evidence:
+`~/.local/state/workmux/workmux.log` shows `open:start name="master" ...
+mode_override=None` -> `kind="session"`, and a live repro
+`workmux add dt2-8647 --open-if-exists --parent-session <scratch>` failed
+identically while `--dry-run` (which skips stored-state lookup) passed.
+The earlier assumption "no `.workmux.yaml` = window mode everywhere" is
+true only for NEW worktrees, not for already-stored ones.
+
+Fix: pass `--mode window` on every `workmux add`/`workmux open` in
+`.config/aven/commands/workmux-add` and `workmux-open` (4 call sites; no
+raw tmux commands used, per user constraint). The override also
+self-migrates the stored `mode` to `window` on success.
+
+Live verification (scratch tmux session, `env -u TMUX`, cleaned up after):
+1. Existing worktree: `add dt2-8647 --open-if-exists --mode window
+   --parent-session <scratch>` -> window created in scratch session. PASS
+2. Master: `add master --open-if-exists --mode window --parent-session
+   <scratch>` -> main checkout opened as a window, no new session. PASS
+3. Fallback shape: `open dt2-8txa --mode window --parent-session
+   <scratch>` -> window created. PASS
+4. New branch: `add <new> -p -a muse --mode window --parent-session
+   <scratch> -H -F` -> worktree + window created. PASS
+   (Without `-a`, create fails with "no pane configured for agent
+   'claude'" — expected: aven always passes `-a muse|agy`, which workmux
+   resolves to a real agent pane.)
+Cleanup: closed the 3 probe windows via `workmux close`, `workmux remove`
+for the 2 probe worktree/branches, killed the scratch session, unset
+dangling `window-session`/`window-token` refs (stored `mode=window`
+kept). `git worktree list` and `tmux ls` verified back to pre-test state
+for user sessions (`carlesoctav_dotfiles2` untouched, still attached).
+Synced both scripts to `/home/carlesoctav/dotfiles2/.config/aven/commands/`
+(live via `~/.config/aven` symlink); `bash -n` clean.
+
+Side effects / notes:
+- The stale session-mode tmux session for the main checkout
+  (`dotfiles2`, created pre-migration) was replaced by the window-mode
+  open during testing and is gone. Orphan session `ggwphd` (no matching
+  worktree) predates this work and was left alone.
+- `workmux-add: no agent selected.` in the user's log is just the fzf
+  agent picker being cancelled (both `muse` and `agy` are installed, so
+  the picker shows) — not a workmux bug.
+- Remaining old worktrees with stored `mode=session` (dt2-0ap4,
+  dt2-aztw, dt2-fx5b, dt2-njm4, dt2-q0yc, fsdf, sdfs, wwp) need no manual
+  migration: the first aven open with the patched scripts migrates each
+  one automatically. Bare `workmux open <name>` without `--mode window`
+  will still use the stored session mode until then.
+- End-to-end CONFIRMED by the user ~13:44-13:46 UTC: `master` opened as
+  window `dotfiles2` and new branch `agg` created as window `agg`, both
+  inside `carlesoctav_dotfiles2` (workmux log `setup_environment:window
+  created`, `mode_override` active). No new sessions.

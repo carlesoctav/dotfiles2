@@ -109,13 +109,15 @@ if [[ -n $target_session ]]; then
 fi
 
 cd "$project_dir"
+# --mode window is required (see workmux-add): old worktrees still store
+# mode=session, which rejects --parent-session without this override.
 if [[ -n $agent ]]; then
-  if ! workmux add "$worktree" -p "$prompt" -a "$agent" --open-if-exists "${parent_session_args[@]}"; then
-    workmux open "$worktree" -p "$prompt" "${parent_session_args[@]}"
+  if ! workmux add "$worktree" -p "$prompt" -a "$agent" --open-if-exists --mode window "${parent_session_args[@]}"; then
+    workmux open "$worktree" -p "$prompt" --mode window "${parent_session_args[@]}"
   fi
 else
-  if ! workmux add "$worktree" -p "$prompt" --open-if-exists "${parent_session_args[@]}"; then
-    workmux open "$worktree" -p "$prompt" "${parent_session_args[@]}"
+  if ! workmux add "$worktree" -p "$prompt" --open-if-exists --mode window "${parent_session_args[@]}"; then
+    workmux open "$worktree" -p "$prompt" --mode window "${parent_session_args[@]}"
   fi
 fi
 
