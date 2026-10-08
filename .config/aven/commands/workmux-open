@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# aven command (z Enter): open-or-create the focused task's workmux worktree.
+#
+# Zero-prompt fast path of workmux-add: worktree name is the lowercase task
+# ref, the prompt is the default template (no $EDITOR), and the agent is the
+# first available of (muse, agy) with no picker. `workmux add
+# --open-if-exists` creates the worktree when missing and switches to it when
+# it exists (like `tmux new -A`); run from inside tmux, the client follows.
+set -euo pipefail
+
+context=${AVEN_COMMAND_CONTEXT:?AVEN_COMMAND_CONTEXT is required}
+if [[ ! -f $context || ! -r $context ]]; then
+  printf 'workmux-open: AVEN_COMMAND_CONTEXT is not a readable file.\n' >&2
+  exit 2
+fi
+
+for dep in jq aven workmux; do
+  if ! command -v "$dep" >/dev/null 2>&1; then
+    printf 'workmux-open: required command not found: %s\n' "$dep" >&2
+    exit 2
+  fi
+done
+
+if ! jq -e '.version == 1 and (.targeting.targets | type == "array" and length == 1)' "$context" >/dev/null; then
+  printf 'workmux-open: select exactly one Aven task.\n' >&2
+  exit 2
+fi
+
+task_id=$(jq -er '.targeting.targets[0].id | select(type == "string" and test("^[A-Za-z0-9]+$"))' "$context") || {
+  printf 'workmux-open: selected task has no valid durable ID.\n' >&2
+  exit 2
+}
+task_ref=$(jq -er '.targeting.targets[0].ref | select(type == "string" and test("^[A-Za-z0-9-]+$"))' "$context") || {
+  printf 'workmux-open: selected task has no valid display reference.\n' >&2
+  exit 2
+}
+project_key=$(jq -r '.selection.primary.project.key // empty' "$context")
+db_path=$(jq -er '.invocation.db_path | select(type == "string" and length > 0)' "$context") || {
+  printf 'workmux-open: Aven did not provide its active database path.\n' >&2
+  exit 2
+}
+aven_exe=$(jq -r '.invocation.aven_exe // empty' "$context")
+if [[ -z $aven_exe ]]; then
+  aven_exe=$(command -v aven)
+fi
+
+# Resolve the task's project directory: project path mapping first, then the
+# linked document's directory (nvim_file), then aven's working directory.
+project_dir=''
+if [[ -n $project_key ]]; then
+  project_dir=$("$aven_exe" --db "$db_path" project path list "$project_key" 2>/dev/null \
+    | sed -n 's/^[^ ]*[ ]*path="\(.*\)"$/\1/p' | head -n 1 || true)
+fi
+if [[ -z $project_dir ]]; then
+  task_json=$("$aven_exe" --db "$db_path" show "$task_id" --full --json 2>/dev/null || true)
+  if [[ -n ${task_json:-} ]]; then
+    linked_file=$(jq -r '.metadata.nvim_file // empty' <<<"$task_json")
+    if [[ -n $linked_file && $linked_file == /* ]]; then
+      project_dir=$(dirname "$linked_file")
+    fi
+  fi
+fi
+if [[ -z $project_dir ]]; then
+  project_dir=$(jq -r '.invocation.cwd // empty' "$context")
+fi
+if [[ ! -d $project_dir ]]; then
+  printf 'workmux-open: could not resolve a project directory for %s.\n' "$task_ref" >&2
+  exit 1
+fi
+
+# No prompts: name after the task, default prompt text, first available agent.
+worktree=$(tr '[:upper:]' '[:lower:]' <<<"$task_ref")
+prompt="please work on this task $task_ref, document your progress on ./logs/project/$task_ref/timeline.md, and later put notes so another agent aware of ur try"
+agent=''
+for candidate in muse agy; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    agent=$candidate
+    break
+  fi
+done
+
+cd "$project_dir"
+if [[ -n $agent ]]; then
+  workmux add "$worktree" -p "$prompt" -a "$agent" --open-if-exists
+else
+  workmux add "$worktree" -p "$prompt" --open-if-exists
+fi
+
+"$aven_exe" --db "$db_path" note "$task_id" --stdin <<EOF
+Opened via workmux-open: agent=${agent:-none} worktree=$worktree prompt logged in worktree.
+EOF
+
+printf 'workmux-open: opened %s (agent=%s worktree=%s)\n' "$task_ref" "${agent:-none}" "$worktree" >&2
