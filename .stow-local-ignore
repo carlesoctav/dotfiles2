@@ -16,6 +16,7 @@ sync_daemon.sh
 tablet.sh
 tablet-revert.sh
 /logs
+/tests
 /wallpapers
 /.workmux
 /.workmux.yaml

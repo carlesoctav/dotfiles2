@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# aven command (z f): fuzzy-find tasks with fzf.
+#
+# Lists tasks from aven's active database, picks one with fzf (live
+# preview of the task context), copies its ref to the clipboard
+# (+tmux buffer), and shows the full task detail. Esc / no match exits
+# quietly back to the TUI.
+set -euo pipefail
+
+context=${AVEN_COMMAND_CONTEXT:?AVEN_COMMAND_CONTEXT is required}
+if [[ ! -f $context || ! -r $context ]]; then
+  printf 'fzf-find: AVEN_COMMAND_CONTEXT is not a readable file.\n' >&2
+  exit 2
+fi
+
+for dep in jq fzf; do
+  if ! command -v "$dep" >/dev/null 2>&1; then
+    printf 'fzf-find: required command not found: %s\n' "$dep" >&2
+    exit 2
+  fi
+done
+
+if ! jq -e '.version == 1' "$context" >/dev/null; then
+  printf 'fzf-find: unsupported command-context version.\n' >&2
+  exit 2
+fi
+
+db_path=$(jq -r '.invocation.db_path // empty' "$context")
+aven_exe=$(jq -r '.invocation.aven_exe // empty' "$context")
+if [[ -z $aven_exe ]]; then
+  aven_exe=$(command -v aven || true)
+fi
+if [[ -z ${aven_exe:-} || ! -x $aven_exe ]]; then
+  printf 'fzf-find: aven executable not available.\n' >&2
+  exit 2
+fi
+
+aven_db_args=()
+if [[ -n $db_path ]]; then
+  aven_db_args=(--db "$db_path")
+fi
+
+tasks_json=$("$aven_exe" "${aven_db_args[@]}" list --json 2>/dev/null) || {
+  printf 'fzf-find: could not list tasks.\n' >&2
+  exit 1
+}
+if (( $(jq 'length' <<<"$tasks_json") == 0 )); then
+  printf 'fzf-find: no tasks to search.\n' >&2
+  exit 0
+fi
+
+# Preview runs in fzf's subshell: export what it needs.
+export AVEN_EXE="$aven_exe" AVEN_DB="$db_path"
+lines=$(jq -r '.[] | [.ref, .status, .title] | @tsv' <<<"$tasks_json")
+
+status=0
+selected=$(fzf --delimiter '\t' --with-nth 1,2,3 \
+  --prompt 'aven> ' \
+  --preview 'ref=$(cut -f1 <<<"{}"); if [ -n "$AVEN_DB" ]; then "$AVEN_EXE" --db "$AVEN_DB" context "$ref" 2>/dev/null; else "$AVEN_EXE" context "$ref" 2>/dev/null; fi | head -50' \
+  --preview-window 'right:60%:wrap' \
+  <<<"$lines") || status=$?
+if ((status == 130 || status == 1)); then
+  exit 0 # Esc / no match: back to the TUI quietly
+elif ((status != 0)); then
+  printf 'fzf-find: fzf failed (exit %d).\n' "$status" >&2
+  exit 2
+fi
+
+ref=$(cut -f1 <<<"$selected")
+
+# Copy the ref for pasting (same cascade as sibling commands).
+clipboard_ok=0
+if command -v wl-copy >/dev/null 2>&1; then
+  if printf '%s' "$ref" | wl-copy 2>/dev/null; then clipboard_ok=1; fi
+fi
+if ((clipboard_ok == 0)) && command -v xclip >/dev/null 2>&1; then
+  if printf '%s' "$ref" | xclip -selection clipboard 2>/dev/null; then clipboard_ok=1; fi
+fi
+if ((clipboard_ok == 0)) && command -v xsel >/dev/null 2>&1; then
+  if printf '%s' "$ref" | xsel --clipboard --input 2>/dev/null; then clipboard_ok=1; fi
+fi
+if ((clipboard_ok == 0)) && command -v pbcopy >/dev/null 2>&1; then
+  if printf '%s' "$ref" | pbcopy 2>/dev/null; then clipboard_ok=1; fi
+fi
+if command -v tmux >/dev/null 2>&1; then
+  tmux set-buffer -b dispatch-prompt "$ref" 2>/dev/null || true
+fi
+if ((clipboard_ok)); then
+  printf 'fzf-find: %s — ref copied to clipboard\n' "$ref" >&2
+else
+  printf 'fzf-find: %s — no clipboard tool worked\n' "$ref" >&2
+fi
+
+detail=$("$aven_exe" "${aven_db_args[@]}" show "$ref" --full 2>/dev/null) || {
+  printf 'fzf-find: could not show %s.\n' "$ref" >&2
+  exit 1
+}
+if [[ -t 1 ]] && command -v less >/dev/null 2>&1; then
+  printf '%s\n' "$detail" | less -R
+else
+  printf '%s\n' "$detail"
+fi
