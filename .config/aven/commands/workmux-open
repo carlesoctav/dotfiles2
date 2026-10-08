@@ -130,9 +130,13 @@ cd "$project_dir"
 # before the window-mode migration still have mode=session stored in git
 # config, and workmux rejects --parent-session for them. The override also
 # self-migrates the stored mode on success.
-if ! workmux add "$worktree" --open-if-exists --mode window "${parent_session_args[@]}"; then
-  workmux open "$worktree" --mode window "${parent_session_args[@]}"
-fi
+workmux add "$worktree" --open-if-exists --mode window "${parent_session_args[@]}" || true
+# Focus: `add` creates the window but leaves the client behind on first
+# creation; `open` switches to it (a no-op re-focus when `add` already
+# opened an existing one). It also doubles as the fallback when `add`
+# failed, and makes the window current for the `attach` below when
+# outside tmux.
+workmux open "$worktree" --mode window "${parent_session_args[@]}"
 
 # Copy the prompt to the clipboard for instant pasting into your agent.
 # Try each clipboard tool until one succeeds; mirror into the tmux buffer
