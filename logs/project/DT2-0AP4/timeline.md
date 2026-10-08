@@ -81,3 +81,18 @@ tmux client auto-switches. Correction (2026-10-08): do NOT remove `z w` /
    was run from this worktree (would disturb the user's tmux client).
 2. If the user later wants the quick path to also skip agent startup
    entirely (plain shells), drop `-a` from the script — one-line change.
+
+## 2026-10-08 — merge + activation (agent: muse)
+
+- Committed `747c65b` in worktree `dt2-0ap4`, rebased clean onto master.
+- `workmux merge` initially refused: main checkout had live uncommitted
+  `M .tmux.conf` (one line: `extended-keys always` -> `on`, i.e. a manual
+  revert of the DT2-FX5B fix — left for the user to adjudicate, still dirty
+  in main). Merged via temp path-limited stash of just that file
+  (`stash push -- .tmux.conf`), `workmux merge --rebase --notification`
+  (success), then `stash pop` — tweak restored byte-identical, stash empty.
+- Post-merge: `workmux-open` deploys via the live symlink
+  (`~/.config/aven/commands` -> main checkout), `bash -n` clean there.
+- Appended the `workmux-open` block (`keys: [z Enter]`) to live
+  `~/.config/aven/config.yaml` (backup at `/tmp/aven-config-backup.yaml`);
+  `aven doctor` -> `ok config file`. TUI restart required to pick it up.
