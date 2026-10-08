@@ -7,3 +7,16 @@
 /fedora-tasks
 remove_default.sh
 essential.sh
+audio.sh
+essential_remote.sh
+fix_kde_drive.sh
+ibm_fonts.sh
+monstar.sh
+rsync_kaggle.sh
+sync_daemon.sh
+tablet.sh
+tablet-revert.sh
+/logs
+/wallpapers
+/.workmux
+/.workmux.yaml
