@@ -2,7 +2,7 @@
 require("options")
 require("remap")
 
--- python host for molten-nvim (pynvim + jupyter_client + ipykernel + jupytext)
+-- python host for jupyter tools (ipykernel, jupytext, etc.)
 vim.g.python3_host_prog = vim.fn.expand("~/.config/nvim/.venv/bin/python")
 vim.g.loaded_node_provider = 0
 vim.g.loaded_perl_provider = 0
