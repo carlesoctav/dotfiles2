@@ -22,6 +22,9 @@ vim.pack.add({
     "https://github.com/nvim-treesitter/nvim-treesitter-textobjects",
     "https://github.com/echasnovski/mini.nvim",
     "https://github.com/ellisonleao/gruvbox.nvim",
+    "https://github.com/nvim-telescope/telescope.nvim",
+    "https://github.com/nvim-lua/plenary.nvim",
+    "https://github.com/nvim-telescope/telescope-ui-select.nvim",
 }, { confirm = false, load = true })
 
 vim.api.nvim_create_user_command("PackUpdate", function()
@@ -48,17 +51,10 @@ require("mini.splitjoin").setup({
         join = "",
     },
 })
-require("mini.pick").setup()
 require("mini.diff").setup()
 vim.keymap.set("n", "<C-q>", function()
     require("mini.bufremove").delete(0, false)
 end)
-
-local pick = require("mini.pick")
-vim.keymap.set("n", "<leader>sf", pick.builtin.files, { desc = "pick files" })
-vim.keymap.set("n", "<leader>sg", pick.builtin.grep_live, { desc = "pick live grep" })
-vim.keymap.set("n", "<leader>sb", pick.builtin.buffers, { desc = "pick buffers" })
-vim.keymap.set("n", "<leader>sh", pick.builtin.help, { desc = "pick help" })
 
 require("gruvbox").setup({})
 vim.cmd("colorscheme gruvbox")

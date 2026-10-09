@@ -31,7 +31,7 @@ fi
 # 2. Required config files present.
 missing=""
 for f in init.lua lua/options.lua lua/remap.lua lua/packages.lua lua/treesitter.lua \
-    lua/lsp.lua lua/jupyter.lua after/queries/python/textobjects.scm; do
+    lua/lsp.lua lua/telescope_conf.lua lua/jupyter.lua after/queries/python/textobjects.scm; do
   [[ -f $CFG/$f ]] || missing="$missing $f"
 done
 [[ -z $missing ]] && pass "config files present" || fail_ "missing files:$missing"
@@ -43,7 +43,8 @@ else
   pass "no lazy references"
 fi
 for repo in molten-nvim jupytext.nvim otter.nvim nvim-treesitter \
-    nvim-treesitter-textobjects mini.nvim gruvbox.nvim; do
+    nvim-treesitter-textobjects mini.nvim gruvbox.nvim telescope.nvim \
+    plenary.nvim telescope-ui-select.nvim; do
   grep -q "$repo" "$CFG/lua/packages.lua" || fail_ "packages.lua missing $repo"
 done
 if grep -q "vim.pack.add" "$CFG/lua/packages.lua"; then
@@ -61,6 +62,17 @@ if grep -q "on_list" "$CFG/lua/lsp.lua" \
   pass "go-to uses quickfix without focus theft, [q/]q present"
 else
   fail_ "lsp.lua must use on_list quickfix + [q/]q, no lsp_results pane"
+fi
+
+# 3c. Telescope is the finder (mini.pick retired). Config module is named
+# telescope_conf: lua/telescope.lua would shadow the plugin's own module.
+if grep -q "telescope.builtin" "$CFG/lua/telescope_conf.lua" \
+    && grep -q "ui-select" "$CFG/lua/telescope_conf.lua" \
+    && ! grep -q "mini.pick" "$CFG/lua/packages.lua" \
+    && [[ ! -e $CFG/lua/telescope.lua ]]; then
+  pass "telescope finder configured, mini.pick retired"
+else
+  fail_ "telescope_conf.lua must configure pickers; packages.lua must drop mini.pick"
 fi
 
 # 4. Every lua file parses (loadfile compiles without executing).
