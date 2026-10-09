@@ -172,6 +172,8 @@ static int release_configuration_file_watch()
 static void clean_up()
 {
     release_configuration_file_watch();
+    release_output_keys();
+    resetMapper();
     release_input();
     release_output();
 }
@@ -233,6 +235,7 @@ int main(int argc, char* argv[])
         {
             log("info: reloading\n");
             release_output_keys();
+            resetMapper();
             release_input();
             if (read_configuration() != EXIT_SUCCESS)
             {
@@ -254,29 +257,78 @@ int main(int argc, char* argv[])
         }
         if (input_event_path[0] == '\0')
         {
-            log("info: you may update the configuration file to have the application attempt discovering the input device again.\n");
-            sleep(UINT_MAX); // this can be interrupted
-            continue;
-        }
-        result = read(input_file_descriptor, &event, sizeof(event));
-        if (result == (ssize_t)-1)
-        {
-            if (errno == EINTR)
+            log("info: waiting for a configured input device to become available...\n");
+            while (!should_exit && !should_reload)
+            {
+                if (read_configuration() == EXIT_SUCCESS && input_event_path[0] != '\0')
+                {
+                    if (bind_input() == EXIT_SUCCESS)
+                    {
+                        log("info: successfully captured input device: %s (%s)\n", input_device_name, input_event_path);
+                        break;
+                    }
+                }
+                sleep(1);
+            }
+            if (input_event_path[0] != '\0')
             {
                 continue;
             }
-            else
+            if (should_exit)
             {
-                error("error: unable to read input event: %s\n", strerror(errno));
                 log("info: exiting\n");
                 clean_up();
-                return EXIT_FAILURE;
+                return EXIT_SUCCESS;
             }
         }
-        if (result == (ssize_t)0)
+        result = read(input_file_descriptor, &event, sizeof(event));
+        if (result == (ssize_t)-1 || result == (ssize_t)0)
         {
-            error("error: received EOF while reading input events\n");
-            log("info: exiting\n");
+            if (result == (ssize_t)-1 && errno == EINTR)
+            {
+                continue;
+            }
+
+            if (result == (ssize_t)-1)
+            {
+                error("error: unable to read input event: %s\n", strerror(errno));
+            }
+            else
+            {
+                error("error: received EOF while reading input events\n");
+            }
+
+            log("info: input device disconnected: %s (%s)\n", input_device_name, input_event_path);
+            release_output_keys();
+            resetMapper();
+            release_input();
+
+            // Attempt to fall back to another configured device (e.g. laptop keyboard) or wait for reconnection
+            log("info: searching for another configured device...\n");
+            int reconnected = 0;
+            while (!should_exit && !should_reload)
+            {
+                if (read_configuration() == EXIT_SUCCESS && input_event_path[0] != '\0')
+                {
+                    if (bind_input() == EXIT_SUCCESS)
+                    {
+                        log("info: successfully switched to device: %s (%s)\n", input_device_name, input_event_path);
+                        reconnected = 1;
+                        break;
+                    }
+                }
+                sleep(1);
+            }
+            if (reconnected)
+            {
+                continue;
+            }
+            if (should_exit)
+            {
+                log("info: exiting\n");
+                clean_up();
+                return EXIT_SUCCESS;
+            }
             clean_up();
             return EXIT_FAILURE;
         }

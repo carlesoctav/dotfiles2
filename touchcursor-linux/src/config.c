@@ -97,7 +97,8 @@ static enum sections {
  * */
 int read_configuration()
 {
-    // Zero the existing arrays
+    // Reset section state and zero arrays
+    section = configuration_none;
     memset(keymap, 0, sizeof(keymap));
     memset(remap, 0, sizeof(remap));
 

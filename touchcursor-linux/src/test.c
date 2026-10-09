@@ -267,6 +267,53 @@ static int testSpecialTyping()
 }
 
 /*
+ * Tests that Space is always released when entering map state from unmapped keys,
+ * and tests queue boundary behavior.
+ */
+static int testSpaceReleaseAndQueue()
+{
+    // Test: Space down, unmapped key down/up, mapped key down/up, Space up.
+    // Verifies that hyperEmitted is honored in map state so Space is NEVER left stuck down.
+    char* description = "sd, od, ou, md, mu, su (Space release in map state)";
+    char* expected = "57:1 30:1 30:0 105:1 105:0 57:0 ";
+    type(12, KEY_SPACE, 1, KEY_A, 1, KEY_A, 0, KEY_J, 1, KEY_J, 0, KEY_SPACE, 0);
+    if (strcmp(expected, output) != 0)
+    {
+        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
+        return 1;
+    }
+    else
+    {
+        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
+    }
+
+    // Test: Space down, mapped down, unmapped down, unmapped up, mapped up, Space up
+    // Fast typing sequence: " ja" where mapped key was in delay queue when unmapped key arrived.
+    description = "sd, md, od, ou, mu, su (Fast typing chord)";
+    expected = "57:1 36:1 30:1 30:0 36:0 57:0 ";
+    type(12, KEY_SPACE, 1, KEY_J, 1, KEY_A, 1, KEY_A, 0, KEY_J, 0, KEY_SPACE, 0);
+    if (strcmp(expected, output) != 0)
+    {
+        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
+        return 1;
+    }
+    else
+    {
+        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
+    }
+
+    // Test: resetMapper resets state
+    resetMapper();
+    if (state != idle)
+    {
+        printf("mapper state should be idle after resetMapper\n");
+        return 1;
+    }
+
+    return 0;
+}
+
+/*
  * Simple method for running all tests.
  */
 static int runTests()
@@ -293,6 +340,9 @@ static int runTests()
 
     mu_run_test(testSpecialTyping);
     printf("Special typing tests passed.\n");
+
+    mu_run_test(testSpaceReleaseAndQueue);
+    printf("Space release and queue tests passed.\n");
 
     return 0;
 }

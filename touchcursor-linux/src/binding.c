@@ -124,16 +124,62 @@ int bind_input()
         error("error: you cannot capture the virtual device: %s\n", strerror(errno));
         return EXIT_FAILURE;
     }
-    // Allow last key press to go through
-    // Grabbing the keys too quickly prevents the last key up event from being sent
-    // https://bugs.freedesktop.org/show_bug.cgi?id=101796
-    usleep(200 * 1000);
+    // Ensure all keys are physically released before grabbing the device.
+    // Grabbing while keys are held prevents previous handlers (like libinput)
+    // from receiving key release events, causing keys (e.g. Enter, Space) to stick
+    // and locking the touchpad (disable-while-typing).
+    unsigned char key_states[KEY_MAX / 8 + 1];
+    int max_wait_ms = 1000;
+    int waited_ms = 0;
+    while (waited_ms < max_wait_ms)
+    {
+        memset(key_states, 0, sizeof(key_states));
+        if (ioctl(input_file_descriptor, EVIOCGKEY(sizeof(key_states)), key_states) < 0)
+        {
+            break;
+        }
+        int any_pressed = 0;
+        for (size_t b = 0; b < sizeof(key_states); b++)
+        {
+            if (key_states[b] != 0)
+            {
+                any_pressed = 1;
+                break;
+            }
+        }
+        if (!any_pressed)
+        {
+            break;
+        }
+        usleep(10 * 1000); // 10ms
+        waited_ms += 10;
+    }
+
+    // Small debounce settling time to allow kernel and desktop handlers to finish processing release events
+    usleep(20 * 1000);
+
     // Grab keys from the input device
     if (ioctl(input_file_descriptor, EVIOCGRAB, 1) < 0)
     {
         error("error: failed to capture the device (EVIOCGRAB: %s)\n", strerror(errno));
+        close(input_file_descriptor);
+        input_file_descriptor = -1;
         return EXIT_FAILURE;
     }
+
+    // Flush any stale events that may have arrived in the fd buffer before grab
+    struct input_event dummy_ev;
+    int flags = fcntl(input_file_descriptor, F_GETFL, 0);
+    if (flags >= 0)
+    {
+        fcntl(input_file_descriptor, F_SETFL, flags | O_NONBLOCK);
+        while (read(input_file_descriptor, &dummy_ev, sizeof(dummy_ev)) > 0)
+        {
+            // discard pre-grab buffered events
+        }
+        fcntl(input_file_descriptor, F_SETFL, flags);
+    }
+
     log("info: successfully captured input device: %s (%s)\n", input_device_name, input_event_path);
     return EXIT_SUCCESS;
 }
@@ -143,12 +189,14 @@ int bind_input()
  * */
 int release_input()
 {
-    if (input_file_descriptor > 0)
+    if (input_file_descriptor >= 0)
     {
         log("info: releasing: %s (%s)\n", input_device_name, input_event_path);
         ioctl(input_file_descriptor, EVIOCGRAB, 0);
         close(input_file_descriptor);
+        input_file_descriptor = -1;
     }
+    input_event_path[0] = '\0';
     return EXIT_SUCCESS;
 }
 
@@ -234,11 +282,13 @@ void release_output_keys()
  * */
 int release_output()
 {
-    if (output_file_descriptor > 0)
+    if (output_file_descriptor >= 0)
     {
         log("info: releasing: %s (%s)\n", output_device_name, output_sys_path);
         ioctl(output_file_descriptor, UI_DEV_DESTROY);
         close(output_file_descriptor);
+        output_file_descriptor = -1;
     }
+    output_sys_path[0] = '\0';
     return EXIT_SUCCESS;
 }

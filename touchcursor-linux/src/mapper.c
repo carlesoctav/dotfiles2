@@ -124,6 +124,7 @@ void processKey(int type, int code, int value)
                         send_remapped_key(code, 1);
                     }
                     send_remapped_key(code, 0);
+                    hyperEmitted = 0;
                 }
             }
             else if (isMapped(code))
@@ -165,6 +166,7 @@ void processKey(int type, int code, int value)
                     }
                     send_remapped_queue(1);
                     send_remapped_key(hyperKey, 0);
+                    hyperEmitted = 0;
                 }
             }
             else if (isMapped(code))
@@ -187,7 +189,16 @@ void processKey(int type, int code, int value)
             }
             else
             {
-                state = map;
+                if (!isModifier(code) && isDown(value))
+                {
+                    if (!hyperEmitted)
+                    {
+                        send_remapped_key(hyperKey, 1);
+                        hyperEmitted = 1;
+                    }
+                    send_remapped_queue(1);
+                }
+                state = hyper;
                 send_remapped_key(code, value);
             }
             break;
@@ -200,6 +211,11 @@ void processKey(int type, int code, int value)
                 {
                     state = idle;
                     send_mapped_queue(0);
+                    if (hyperEmitted)
+                    {
+                        send_remapped_key(hyperKey, 0);
+                        hyperEmitted = 0;
+                    }
                 }
             }
             else if (isMapped(code))
@@ -218,4 +234,14 @@ void processKey(int type, int code, int value)
         }
     }
     /* printf("processKey(out): state=%i\n", state); */
+}
+
+/**
+ * Resets the mapper state machine to idle and clears all queues.
+ * */
+void resetMapper()
+{
+    state = idle;
+    hyperEmitted = 0;
+    clearQueue();
 }

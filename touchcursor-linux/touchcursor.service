@@ -3,6 +3,8 @@ Description=Touch Cursor Service
 
 [Service]
 ExecStart=/usr/bin/touchcursor
+Restart=always
+RestartSec=1
 
 [Install]
 WantedBy=default.target

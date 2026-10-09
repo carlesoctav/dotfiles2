@@ -17,4 +17,9 @@ extern enum states state;
  * */
 void processKey(int code, int type, int value);
 
+/**
+ * Resets the mapper state machine to idle and clears all queues.
+ * */
+void resetMapper();
+
 #endif

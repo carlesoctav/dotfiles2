@@ -93,7 +93,7 @@ void removeKeyFromQueue(int value)
             {
                 if (i != tail)
                 {
-                    for (int j = (i + 1) % length; j != tail; j = (j + 1) % length, i++)
+                    for (int j = (i + 1) % length; j != tail; j = (j + 1) % length, i = (i + 1) % length)
                     {
                         store[i] = store[j];
                     }
