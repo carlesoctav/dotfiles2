@@ -53,15 +53,17 @@ else
   fail_ "vim.pack.add missing from packages.lua"
 fi
 
-# 3b. Go-to maps use stock quickfix without focus theft; [q/]q walk it.
-if grep -q "on_list" "$CFG/lua/lsp.lua" \
-    && grep -q "botright copen" "$CFG/lua/lsp.lua" \
-    && grep -q '"\[q"' "$CFG/lua/lsp.lua" \
-    && grep -q '"\]q"' "$CFG/lua/lsp.lua" \
+# 3b. LSP go-to maps route through telescope pickers (gd, gr, gI, gy, gs, gS).
+if grep -q 'require("telescope.builtin").lsp_definitions' "$CFG/lua/lsp.lua" \
+    && grep -q 'require("telescope.builtin").lsp_references' "$CFG/lua/lsp.lua" \
+    && grep -q 'require("telescope.builtin").lsp_implementations' "$CFG/lua/lsp.lua" \
+    && grep -q 'require("telescope.builtin").lsp_type_definitions' "$CFG/lua/lsp.lua" \
+    && grep -q 'require("telescope.builtin").lsp_document_symbols' "$CFG/lua/lsp.lua" \
+    && grep -q 'require("telescope.builtin").lsp_dynamic_workspace_symbols' "$CFG/lua/lsp.lua" \
     && [[ ! -e $CFG/lua/lsp_results.lua ]]; then
-  pass "go-to uses quickfix without focus theft, [q/]q present"
+  pass "LSP go-to maps route through telescope pickers"
 else
-  fail_ "lsp.lua must use on_list quickfix + [q/]q, no lsp_results pane"
+  fail_ "lsp.lua must route gd/gr/gI/gy/gs/gS through telescope.builtin"
 fi
 
 # 3c. Telescope is the finder (mini.pick retired). Config module is named

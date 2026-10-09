@@ -3,43 +3,18 @@
 -- its binary is executable, so a missing binary degrades to no-LSP rather
 -- than a startup error.
 
--- Stock quickfix behavior for go-to results (setqflist + botright copen),
--- except the cursor never leaves the source window. Walk the list with
--- [q / ]q from where you stand.
-local function qf_on_list(options)
-    local src = vim.api.nvim_get_current_win()
-    vim.fn.setqflist({}, " ", options)
-    vim.cmd("botright copen")
-    if vim.api.nvim_win_is_valid(src) then
-        vim.api.nvim_set_current_win(src)
-    end
-end
-
 vim.api.nvim_create_autocmd("LspAttach", {
     group = vim.api.nvim_create_augroup("lsp-attach", { clear = true }),
     callback = function(event)
         local map = function(keys, func, desc)
             vim.keymap.set("n", keys, func, { buffer = event.buf, desc = desc })
         end
-        map("gd", function()
-            vim.lsp.buf.definition({ on_list = qf_on_list })
-        end, "go to definition")
-        map("gr", function()
-            vim.lsp.buf.references(nil, { on_list = qf_on_list })
-        end, "go to references")
-        map("gI", function()
-            vim.lsp.buf.implementation({ on_list = qf_on_list })
-        end, "go to implementation")
-        map("gy", function()
-            vim.lsp.buf.type_definition({ on_list = qf_on_list })
-        end, "go to type definition")
-        map("gs", function()
-            vim.lsp.buf.document_symbol({ on_list = qf_on_list })
-        end, "document symbols")
-        map("gS", function()
-            local query = vim.fn.expand("<cword>")
-            vim.lsp.buf.workspace_symbol(query ~= "" and query or nil, { on_list = qf_on_list })
-        end, "workspace symbols")
+        map("gd", require("telescope.builtin").lsp_definitions, "go to definition")
+        map("gr", require("telescope.builtin").lsp_references, "go to references")
+        map("gI", require("telescope.builtin").lsp_implementations, "go to implementation")
+        map("gy", require("telescope.builtin").lsp_type_definitions, "go to type definition")
+        map("gs", require("telescope.builtin").lsp_document_symbols, "document symbols")
+        map("gS", require("telescope.builtin").lsp_dynamic_workspace_symbols, "workspace symbols")
         map("cd", vim.lsp.buf.rename, "rename")
         map("g.", vim.lsp.buf.code_action, "code action")
         map("K", vim.lsp.buf.hover, "hover")
