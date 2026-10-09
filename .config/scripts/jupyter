@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Open Neovim with the lean notebook config (NVIM_APPNAME=jupyter).
+# Config: ~/.config/jupyter (this repo's .config/jupyter).
+exec env NVIM_APPNAME=jupyter nvim "$@"
