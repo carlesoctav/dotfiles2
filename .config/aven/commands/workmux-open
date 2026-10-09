@@ -6,6 +6,8 @@
 # lowercase task ref) -> store it on the task -> run plain
 # `workmux add <name> --open-if-exists` (no -p/-a), falling back to
 # `workmux open` -> copy the prompt for pasting into your agent.
+# Unrelated tmux clients that workmux's focus drags across sessions are
+# switched back, so only the invoking client follows to the new window.
 #
 # Requires a running tmux server (start it before running aven).
 set -euo pipefail
@@ -123,6 +125,12 @@ if [[ -n $target_session ]]; then
   parent_session_args=(--parent-session "$target_session")
 fi
 
+# Snapshot attached clients: workmux focuses with bare `switch-client`
+# (no -c), which without TMUX context (aven runs outside tmux) drags an
+# arbitrary attached client across sessions instead of the invoking one.
+# After workmux runs, every unrelated client that moved is switched back.
+clients_before=$(tmux list-clients -F $'#{client_name}\t#{client_session}' 2>/dev/null || true)
+
 cd "$project_dir"
 
 # Plain worktree create-or-open: no -p/-a.
@@ -135,8 +143,48 @@ workmux add "$worktree" --open-if-exists --mode window "${parent_session_args[@]
 # creation; `open` switches to it (a no-op re-focus when `add` already
 # opened an existing one). It also doubles as the fallback when `add`
 # failed, and makes the window current for the `attach` below when
-# outside tmux.
-workmux open "$worktree" --mode window "${parent_session_args[@]}"
+# outside tmux. Its exit is deferred so unrelated clients are restored
+# even when it fails.
+open_code=0
+workmux open "$worktree" --mode window "${parent_session_args[@]}" || open_code=$?
+
+# Switch back every client workmux's focus dragged across sessions, except
+# clients of the invoking session: inside tmux they follow to the new
+# window (like the sessionizer). Outside tmux there is no invoking client,
+# so every mover is restored.
+if [[ -n $clients_before ]]; then
+  invoking_session=''
+  if [[ -n ${TMUX:-} && -n $target_session ]]; then
+    invoking_session=$target_session
+  fi
+  declare -A sess_before=()
+  while IFS=$'\t' read -r cname csession; do
+    if [[ -n $cname && -n $csession ]]; then
+      sess_before[$cname]=$csession
+    fi
+  done <<<"$clients_before"
+  clients_after=$(tmux list-clients -F $'#{client_name}\t#{client_session}' 2>/dev/null || true)
+  if [[ -n $clients_after ]]; then
+    while IFS=$'\t' read -r cname csession; do
+      if [[ -z $cname || -z $csession ]]; then
+        continue
+      fi
+      before=${sess_before[$cname]:-}
+      if [[ -z $before || $before == "$csession" ]]; then
+        continue
+      fi
+      if [[ -n $invoking_session && $before == "$invoking_session" ]]; then
+        continue
+      fi
+      tmux switch-client -c "$cname" -t "=$before" 2>/dev/null || printf \
+        'workmux-open: warning: could not move %s back to %s.\n' "$cname" "$before" >&2
+    done <<<"$clients_after"
+  fi
+fi
+
+if ((open_code != 0)); then
+  exit "$open_code"
+fi
 
 # Copy the prompt to the clipboard for instant pasting into your agent.
 # Try each clipboard tool until one succeeds; mirror into the tmux buffer
