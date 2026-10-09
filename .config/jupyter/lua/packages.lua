@@ -6,6 +6,7 @@
 -- main config's known-good set.
 
 -- molten reads these when it initializes, so they must precede the pack load.
+vim.g.molten_image_provider = "image.nvim"
 vim.g.molten_output_win_max_height = 12
 vim.g.molten_virt_text_output = false
 vim.g.molten_auto_open_output = true
@@ -25,6 +26,7 @@ vim.pack.add({
     "https://github.com/nvim-telescope/telescope.nvim",
     "https://github.com/nvim-lua/plenary.nvim",
     "https://github.com/nvim-telescope/telescope-ui-select.nvim",
+    "https://github.com/3rd/image.nvim",
 }, { confirm = false, load = true })
 
 vim.api.nvim_create_user_command("PackUpdate", function()

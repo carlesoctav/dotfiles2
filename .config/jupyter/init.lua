@@ -21,5 +21,6 @@ vim.g.loaded_ruby_provider = 0
 require("packages")
 require("treesitter")
 require("telescope_conf")
+require("image_conf")
 require("lsp")
 require("jupyter")

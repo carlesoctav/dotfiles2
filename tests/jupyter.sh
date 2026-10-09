@@ -31,7 +31,7 @@ fi
 # 2. Required config files present.
 missing=""
 for f in init.lua lua/options.lua lua/remap.lua lua/packages.lua lua/treesitter.lua \
-    lua/lsp.lua lua/telescope_conf.lua lua/jupyter.lua after/queries/python/textobjects.scm; do
+    lua/lsp.lua lua/telescope_conf.lua lua/image_conf.lua lua/jupyter.lua after/queries/python/textobjects.scm; do
   [[ -f $CFG/$f ]] || missing="$missing $f"
 done
 [[ -z $missing ]] && pass "config files present" || fail_ "missing files:$missing"
@@ -44,7 +44,7 @@ else
 fi
 for repo in molten-nvim jupytext.nvim otter.nvim nvim-treesitter \
     nvim-treesitter-textobjects mini.nvim gruvbox.nvim telescope.nvim \
-    plenary.nvim telescope-ui-select.nvim; do
+    plenary.nvim telescope-ui-select.nvim image.nvim; do
   grep -q "$repo" "$CFG/lua/packages.lua" || fail_ "packages.lua missing $repo"
 done
 if grep -q "vim.pack.add" "$CFG/lua/packages.lua"; then
@@ -73,6 +73,17 @@ if grep -q "telescope.builtin" "$CFG/lua/telescope_conf.lua" \
   pass "telescope finder configured, mini.pick retired"
 else
   fail_ "telescope_conf.lua must configure pickers; packages.lua must drop mini.pick"
+fi
+
+# 3d. image.nvim is configured with tmux awareness and magick_cli.
+# Config module is named image_conf: lua/image.lua would shadow the plugin's own module.
+if grep -q 'processor = "magick_cli"' "$CFG/lua/image_conf.lua" \
+    && grep -q 'tmux_show_only_in_active_window = true' "$CFG/lua/image_conf.lua" \
+    && grep -q 'molten_image_provider = "image.nvim"' "$CFG/lua/packages.lua" \
+    && [[ ! -e $CFG/lua/image.lua ]]; then
+  pass "image.nvim configured with tmux awareness and molten integration"
+else
+  fail_ "image_conf.lua must configure image.nvim with tmux awareness and molten provider"
 fi
 
 # 4. Every lua file parses (loadfile compiles without executing).
