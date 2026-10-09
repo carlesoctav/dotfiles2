@@ -60,15 +60,14 @@ debug: $(out_path)/$(binary)
 	@echo "# Run $(out_path)/$(binary)"
 	$(out_path)/$(binary)
 
-install:
+install: $(out_path)/$(binary)
 	@echo "# Stopping and disabling the service"
 	-systemctl --user disable --now $(service)
 	@echo ""
 
 	@echo "# Copying application to $(INSTALLPATH)"
 	@echo "# This action requires sudo."
-	sudo cp --force $(out_path)/$(binary) $(INSTALLPATH)
-	sudo chmod u+s $(INSTALLPATH)/$(binary)
+	sudo install -m 4755 $(out_path)/$(binary) $(INSTALLPATH)/$(binary)
 	@echo ""
 
 	@echo "# Copying service file to $(SERVICEPATH)"
