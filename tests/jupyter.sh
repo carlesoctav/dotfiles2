@@ -31,7 +31,7 @@ fi
 # 2. Required config files present.
 missing=""
 for f in init.lua lua/options.lua lua/remap.lua lua/packages.lua lua/treesitter.lua \
-    lua/lsp.lua lua/jupyter.lua after/queries/python/textobjects.scm; do
+    lua/lsp.lua lua/lsp_results.lua lua/jupyter.lua after/queries/python/textobjects.scm; do
   [[ -f $CFG/$f ]] || missing="$missing $f"
 done
 [[ -z $missing ]] && pass "config files present" || fail_ "missing files:$missing"
@@ -51,6 +51,16 @@ if grep -q "vim.pack.add" "$CFG/lua/packages.lua"; then
 else
   fail_ "vim.pack.add missing from packages.lua"
 fi
+
+# 3b. Go-to maps use the reused results pane, never builtin quickfix jumps.
+if grep -q 'require("lsp_results")' "$CFG/lua/lsp.lua" \
+    && ! grep -q "vim.lsp.buf.definition\|vim.lsp.buf.references\|vim.lsp.buf.document_symbol" "$CFG/lua/lsp.lua"; then
+  pass "go-to maps use lsp_results pane"
+else
+  fail_ "lsp.lua must route gd/gr/gs through lsp_results"
+fi
+grep -q "nvim_open_win" "$CFG/lua/lsp_results.lua" \
+  && pass "results pane uses split window" || fail_ "lsp_results.lua missing split logic"
 
 # 4. Every lua file parses (loadfile compiles without executing).
 if command -v nvim >/dev/null 2>&1; then

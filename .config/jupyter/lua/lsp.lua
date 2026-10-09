@@ -9,11 +9,15 @@ vim.api.nvim_create_autocmd("LspAttach", {
         local map = function(keys, func, desc)
             vim.keymap.set("n", keys, func, { buffer = event.buf, desc = desc })
         end
-        map("gd", vim.lsp.buf.definition, "go to definition")
-        map("gr", vim.lsp.buf.references, "go to references")
-        map("gI", vim.lsp.buf.implementation, "go to implementation")
-        map("gy", vim.lsp.buf.type_definition, "go to type definition")
-        map("gs", vim.lsp.buf.document_symbol, "document symbols")
+        -- go-to results land in one reused vsplit (lua/lsp_results.lua):
+        -- never the quickfix list, cursor stays in the source window.
+        local goto_pane = require("lsp_results")
+        map("gd", goto_pane.definition, "go to definition")
+        map("gr", goto_pane.references, "go to references")
+        map("gI", goto_pane.implementation, "go to implementation")
+        map("gy", goto_pane.type_definition, "go to type definition")
+        map("gs", goto_pane.document_symbols, "document symbols")
+        map("gS", goto_pane.workspace_symbols, "workspace symbols")
         map("cd", vim.lsp.buf.rename, "rename")
         map("g.", vim.lsp.buf.code_action, "code action")
         map("K", vim.lsp.buf.hover, "hover")
