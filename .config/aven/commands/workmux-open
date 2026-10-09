@@ -97,39 +97,34 @@ aven awareness (required): aven is this workspace's local task manager.
 - Mark the task active: aven edit $task_ref --status active
 - Leave handoff context when done or blocked with: aven note $task_ref --stdin (append-style notes), starting your note with [agent]; when your work produced new commit(s), include the commit hash or range (e.g. from \`git rev-parse --short HEAD\`) so the change is traceable from any worktree"
 
-# Resolve target tmux session: current session if inside tmux,
-# or project session via tmux-sessionizer if outside tmux.
+# Resolve target tmux session via tmux-sessionizer logic.
+sessionizer=''
+self_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+for candidate in "$self_dir/../../scripts/tmux-sessionizer" "$HOME/.config/scripts/tmux-sessionizer"; do
+  if [[ -f $candidate ]]; then sessionizer=$candidate; break; fi
+done
+if [[ -n $sessionizer ]]; then
+  # shellcheck disable=SC1090
+  . "$sessionizer"
+fi
+
 target_session=''
-if [[ -n ${TMUX:-} ]]; then
-  target_session=$(tmux display-message -p '#S' 2>/dev/null || true)
-else
-  sessionizer=''
-  self_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-  for candidate in "$self_dir/../../scripts/tmux-sessionizer" "$HOME/.config/scripts/tmux-sessionizer"; do
-    if [[ -f $candidate ]]; then sessionizer=$candidate; break; fi
-  done
-  if [[ -n $sessionizer ]]; then
-    # shellcheck disable=SC1090
-    . "$sessionizer"
-    if command -v session_name_for >/dev/null 2>&1; then
-      target_session=$(session_name_for "$project_dir")
-    fi
-  fi
-  if [[ -z $target_session ]]; then
-    target_session=$(basename "$project_dir" | tr '/.:' '_')
-  fi
+if command -v session_name_for >/dev/null 2>&1; then
+  target_session=$(session_name_for "$project_dir")
+fi
+if [[ -z $target_session ]]; then
+  target_session=$(basename "$project_dir" | tr '/.:' '_')
+fi
+
+# Ensure target session exists (triggers template hook windows 1-4 if newly created)
+if ! tmux has-session -t "$target_session" 2>/dev/null; then
+  tmux new-session -ds "$target_session" -c "$project_dir" 2>/dev/null || true
 fi
 
 parent_session_args=()
 if [[ -n $target_session ]]; then
   parent_session_args=(--parent-session "$target_session")
 fi
-
-# Snapshot attached clients: workmux focuses with bare `switch-client`
-# (no -c), which without TMUX context (aven runs outside tmux) drags an
-# arbitrary attached client across sessions instead of the invoking one.
-# After workmux runs, every unrelated client that moved is switched back.
-clients_before=$(tmux list-clients -F $'#{client_name}\t#{client_session}' 2>/dev/null || true)
 
 cd "$project_dir"
 
@@ -138,52 +133,29 @@ cd "$project_dir"
 # before the window-mode migration still have mode=session stored in git
 # config, and workmux rejects --parent-session for them. The override also
 # self-migrates the stored mode on success.
-workmux add "$worktree" --open-if-exists --mode window "${parent_session_args[@]}" || true
-# Focus: `add` creates the window but leaves the client behind on first
-# creation; `open` switches to it (a no-op re-focus when `add` already
-# opened an existing one). It also doubles as the fallback when `add`
-# failed, and makes the window current for the `attach` below when
-# outside tmux. Its exit is deferred so unrelated clients are restored
-# even when it fails.
-open_code=0
-workmux open "$worktree" --mode window "${parent_session_args[@]}" || open_code=$?
+if [[ -n ${TMUX:-} ]]; then
+  # Inside tmux: plain create-or-open, then focus window via workmux open (which calls switch-client).
+  # Because we are inside tmux, switch-client moves our client to $target_session.
+  workmux add "$worktree" --open-if-exists --mode window "${parent_session_args[@]}" || true
+  workmux open "$worktree" --mode window "${parent_session_args[@]}"
+else
+  # Outside tmux: create/ensure window with -b (suppresses switch-client so other clients are never hijacked).
+  workmux add "$worktree" --open-if-exists -b --mode window "${parent_session_args[@]}" || true
 
-# Switch back every client workmux's focus dragged across sessions, except
-# clients of the invoking session: inside tmux they follow to the new
-# window (like the sessionizer). Outside tmux there is no invoking client,
-# so every mover is restored.
-if [[ -n $clients_before ]]; then
-  invoking_session=''
-  if [[ -n ${TMUX:-} && -n $target_session ]]; then
-    invoking_session=$target_session
+  # Select the window in the session so attach opens right to it.
+  token=$(git config "workmux.worktree.$worktree.window-token" 2>/dev/null || true)
+  window_id=''
+  if [[ -n $token ]]; then
+    window_id=$(tmux list-windows -t "$target_session" -F '#{window_id} #{@workmux_token}' 2>/dev/null \
+      | awk -v t="$token" '$2 == t {print $1; exit}')
   fi
-  declare -A sess_before=()
-  while IFS=$'\t' read -r cname csession; do
-    if [[ -n $cname && -n $csession ]]; then
-      sess_before[$cname]=$csession
-    fi
-  done <<<"$clients_before"
-  clients_after=$(tmux list-clients -F $'#{client_name}\t#{client_session}' 2>/dev/null || true)
-  if [[ -n $clients_after ]]; then
-    while IFS=$'\t' read -r cname csession; do
-      if [[ -z $cname || -z $csession ]]; then
-        continue
-      fi
-      before=${sess_before[$cname]:-}
-      if [[ -z $before || $before == "$csession" ]]; then
-        continue
-      fi
-      if [[ -n $invoking_session && $before == "$invoking_session" ]]; then
-        continue
-      fi
-      tmux switch-client -c "$cname" -t "=$before" 2>/dev/null || printf \
-        'workmux-open: warning: could not move %s back to %s.\n' "$cname" "$before" >&2
-    done <<<"$clients_after"
+  if [[ -z $window_id ]]; then
+    window_id=$(tmux list-windows -t "$target_session" -F '#{window_id} #{window_name}' 2>/dev/null \
+      | awk -v w="$worktree" '$2 ~ "(^|[ wm-]| )" w "$" {print $1; exit}')
   fi
-fi
-
-if ((open_code != 0)); then
-  exit "$open_code"
+  if [[ -n $window_id ]]; then
+    tmux select-window -t "$window_id" 2>/dev/null || true
+  fi
 fi
 
 # Copy the prompt to the clipboard for instant pasting into your agent.
