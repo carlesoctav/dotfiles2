@@ -3,15 +3,14 @@
 -- separate from the main config. Plugins are managed by built-in vim.pack
 -- (Neovim 0.12+), see lua/packages.lua.
 --
--- First launch needs network: plugins clone into the pack dir, then run
--- `:UpdateRemotePlugins` once (molten is a remote plugin; vim.pack has no
--- build hooks) and restart. Treesitter parsers install async in the
--- background. Update everything later with `:PackUpdate`.
+-- First launch clones plugins into the pack dir. Treesitter parsers
+-- install async in the background. Code execution routes to tmux
+-- panes (colab repl, ipython, etc.) via vim-slime. Update later with `:PackUpdate`.
 
 require("options")
 require("remap")
 
--- Reuse the main config's Python env: pynvim + jupyter_client (molten),
+-- Reuse the main config's Python env: jupyter_client,
 -- ipykernel (kernels), jupytext (ipynb <-> py:percent conversion).
 vim.g.python3_host_prog = vim.fn.expand("~/.config/nvim/.venv/bin/python")
 vim.g.loaded_node_provider = 0

@@ -1,8 +1,8 @@
--- Jupyter notebooks: molten (run code) + jupytext (ipynb <-> py:percent) + otter (LSP in docs).
+-- Jupyter notebooks: vim-slime (run code in tmux pane) + jupytext (ipynb <-> py:percent) + otter (LSP in docs).
 -- Plugin installs live in lua/packages.lua (vim.pack); this file is cell
 -- helpers plus buffer-local keybinds.
 -- Python side lives in ~/.config/nvim/.venv (python3_host_prog in init.lua):
--- pynvim + jupyter_client (molten), ipykernel (the `nvim` kernel), jupytext (conversion).
+-- ipykernel (the `nvim` kernel), jupytext (conversion).
 
 local group = vim.api.nvim_create_augroup("Jupyter", { clear = true })
 
@@ -86,7 +86,7 @@ end
 
 local function run_cell()
     local top, bottom = current_cell()
-    vim.fn.MoltenEvaluateRange(top, bottom)
+    vim.cmd(string.format("%d,%dSlimeSend", top, bottom))
 end
 
 local function run_cell_next()
@@ -108,35 +108,30 @@ local function run_cell_insert_below()
     vim.api.nvim_win_set_cursor(0, { bottom + 2, 0 })
 end
 
--- Jupyter-style molten keybinds, only in *.ipynb buffers --------------------------
+-- Cell and line runners via vim-slime, in *.ipynb and *.py buffers ---------------
 vim.api.nvim_create_autocmd({ "BufReadPost", "BufEnter" }, {
     group = group,
-    pattern = "*.ipynb",
+    pattern = { "*.ipynb", "*.py" },
     callback = function(args)
         local map = function(mode, lhs, rhs, desc)
             vim.keymap.set(mode, lhs, rhs, { buffer = args.buf, silent = true, desc = desc })
         end
         -- the jupyter trio
-        map("n", "<C-CR>", run_cell, "molten: run cell")
-        map("n", "<S-CR>", run_cell_next, "molten: run cell and go to next")
-        map("n", "<M-CR>", run_cell_insert_below, "molten: run cell and insert cell below")
-        map("v", "<C-CR>", ":<C-u>MoltenEvaluateVisual<CR>gv", "molten: run selection")
+        map("n", "<C-CR>", run_cell, "slime: run cell")
+        map("n", "<S-CR>", run_cell_next, "slime: run cell and go to next")
+        map("n", "<M-CR>", run_cell_insert_below, "slime: run cell and insert cell below")
+        map("v", "<C-CR>", ":<C-u>'<,'>SlimeSend<CR>gv", "slime: run selection")
         -- F-keys: plain sequences every terminal passes through, no protocol needed
-        map("n", "<F5>", run_cell, "molten: run cell")
-        map("n", "<S-F5>", run_cell_next, "molten: run cell and go to next")
-        map("n", "<M-F5>", run_cell_insert_below, "molten: run cell and insert cell below")
-        map("v", "<F5>", ":<C-u>MoltenEvaluateVisual<CR>gv", "molten: run selection")
-        -- fallbacks (if the terminal eats the Enter chords) + essentials
-        map("n", "<localleader>E", run_cell_next, "molten: run cell and go to next")
-        map("v", "<localleader>r", ":<C-u>MoltenEvaluateVisual<CR>gv", "molten: run selection")
-        map("n", "<localleader>mi", ":MoltenInit<CR>", "molten: init kernel")
-        map("n", "<localleader>rl", ":MoltenEvaluateLine<CR>", "molten: evaluate line")
-        map("n", "<localleader>rr", ":MoltenReevaluateCell<CR>", "molten: re-evaluate cell")
-        map("n", "<localleader>md", ":MoltenDelete<CR>", "molten: delete cell")
-        map("n", "<localleader>oh", ":MoltenHideOutput<CR>", "molten: hide output")
-        map("n", "<localleader>os", ":noautocmd MoltenEnterOutput<CR>", "molten: show/enter output")
-        map("n", "<localleader>mc", ":MoltenInterrupt<CR>", "molten: interrupt kernel")
-        map("n", "<localleader>mr", ":MoltenRestart<CR>", "molten: restart kernel")
+        map("n", "<F5>", run_cell, "slime: run cell")
+        map("n", "<S-F5>", run_cell_next, "slime: run cell and go to next")
+        map("n", "<M-F5>", run_cell_insert_below, "slime: run cell and insert cell below")
+        map("v", "<F5>", ":<C-u>'<,'>SlimeSend<CR>gv", "slime: run selection")
+        -- essentials + configuration
+        map("n", "<localleader>r", run_cell, "slime: run cell")
+        map("n", "<localleader>E", run_cell_next, "slime: run cell and go to next")
+        map("v", "<localleader>r", ":<C-u>'<,'>SlimeSend<CR>gv", "slime: run selection")
+        map("n", "<localleader>rl", ":.SlimeSend<CR>", "slime: run current line")
+        map("n", "<localleader>s", "<cmd>SlimeConfig<CR>", "slime: configure target tmux pane")
     end,
 })
 

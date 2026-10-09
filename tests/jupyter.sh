@@ -42,7 +42,7 @@ if grep -rq "lazy" "$CFG" --include='*.lua'; then
 else
   pass "no lazy references"
 fi
-for repo in molten-nvim jupytext.nvim otter.nvim nvim-treesitter \
+for repo in vim-slime jupytext.nvim otter.nvim nvim-treesitter \
     nvim-treesitter-textobjects mini.nvim gruvbox.nvim telescope.nvim \
     plenary.nvim telescope-ui-select.nvim image.nvim; do
   grep -q "$repo" "$CFG/lua/packages.lua" || fail_ "packages.lua missing $repo"
@@ -81,11 +81,20 @@ fi
 # Config module is named image_conf: lua/image.lua would shadow the plugin's own module.
 if grep -q 'processor = "magick_cli"' "$CFG/lua/image_conf.lua" \
     && grep -q 'tmux_show_only_in_active_window = true' "$CFG/lua/image_conf.lua" \
-    && grep -q 'molten_image_provider = "image.nvim"' "$CFG/lua/packages.lua" \
     && [[ ! -e $CFG/lua/image.lua ]]; then
-  pass "image.nvim configured with tmux awareness and molten integration"
+  pass "image.nvim configured with tmux awareness"
 else
-  fail_ "image_conf.lua must configure image.nvim with tmux awareness and molten provider"
+  fail_ "image_conf.lua must configure image.nvim with tmux awareness"
+fi
+
+# 3e. vim-slime routes cell execution to tmux pane; molten retired.
+if grep -q 'vim.g.slime_target = "tmux"' "$CFG/lua/packages.lua" \
+    && grep -q 'vim.g.slime_bracketed_paste = 1' "$CFG/lua/packages.lua" \
+    && grep -q 'SlimeSend' "$CFG/lua/jupyter.lua" \
+    && ! grep -rq "molten" "$CFG" --include='*.lua'; then
+  pass "vim-slime routes cell execution to tmux pane, molten retired"
+else
+  fail_ "jupyter config must use vim-slime for cell runners and retire molten"
 fi
 
 # 4. Every lua file parses (loadfile compiles without executing).

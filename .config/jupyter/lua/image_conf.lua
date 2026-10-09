@@ -1,5 +1,5 @@
--- image.nvim: inline graphics via Kitty protocol, integrated with molten-nvim
--- and aware of tmux (pane offsetting, active-window tracking, passthrough).
+-- image.nvim: inline graphics via Kitty protocol in Ghostty,
+-- aware of tmux (pane offsetting, active-window tracking, passthrough).
 local ok, image = pcall(require, "image")
 if not ok then
     return
@@ -19,7 +19,7 @@ image.setup({
     },
     max_width = 100,
     max_height = 12,
-    max_height_window_percentage = math.huge, -- essential for molten output windows
+    max_height_window_percentage = math.huge,
     max_width_window_percentage = math.huge,
     window_overlap_clear_enabled = true,
     window_overlap_clear_ft_ignore = { "cmp_menu", "cmp_docs", "" },
