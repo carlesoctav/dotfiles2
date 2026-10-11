@@ -9,7 +9,7 @@ local:
     preview_quota_bytes: 536870912
     maintenance_limit: 128
 sync:
-  enabled: false
+  enabled: true
   interval_seconds: 30
   qr_glyphs: auto
 daemon:
@@ -32,6 +32,18 @@ project:
       paths:
         - /home/carlesoctav/agents/.agents
         - /home/carlesoctav/agents
+    # aven-managed project path mapping
+    - workspace_id: '0000000000000000'
+      workspace: default
+      project: torchy
+      paths:
+        - /home/carlesoctav/personal/torchy
+    # aven-managed project path mapping
+    - workspace_id: '0000000000000000'
+      workspace: default
+      project: mycolab
+      paths:
+        - /home/carlesoctav/personal/mycolab
 agent:
   task_intake:
     command: null
