@@ -90,16 +90,29 @@ fi
   printf 'workmux-open: warning: could not store branch on %s.\n' "$task_ref" >&2
 }
 
-prompt="please work on this task $task_ref.
+self_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+template_file=""
+for candidate in "$self_dir/../prompts/yy.md" "$HOME/.config/aven/prompts/yy.md"; do
+  if [[ -f $candidate ]]; then
+    template_file=$candidate
+    break
+  fi
+done
+
+if [[ -n $template_file ]]; then
+  prompt=$(sed -e "s/{{task_ref}}/$task_ref/g" -e "s/{task_ref}/$task_ref/g" -e "s/\\\$task_ref/$task_ref/g" "$template_file")
+else
+  prompt="please work on this task $task_ref.
 
 aven awareness (required): aven is this workspace's local task manager.
 - Run 'aven prime' for agent guidance plus live work, and 'aven context $task_ref' for this task.
 - Mark the task active: aven edit $task_ref --status active
-- Leave handoff context when done or blocked with: aven note $task_ref --stdin (append-style notes), starting your note with [agent]; when your work produced new commit(s), include the commit hash or range (e.g. from \`git rev-parse --short HEAD\`) so the change is traceable from any worktree"
+- Leave handoff context when done or blocked with: aven note $task_ref --stdin (append-style notes), starting your note with [agent]
+- Never commit unless specified by the user."
+fi
 
 # Resolve target tmux session via tmux-sessionizer logic.
 sessionizer=''
-self_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 for candidate in "$self_dir/../../scripts/tmux-sessionizer" "$HOME/.config/scripts/tmux-sessionizer"; do
   if [[ -f $candidate ]]; then sessionizer=$candidate; break; fi
 done

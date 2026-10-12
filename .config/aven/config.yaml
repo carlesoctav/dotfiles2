@@ -44,6 +44,12 @@ project:
       project: mycolab
       paths:
         - /home/carlesoctav/personal/mycolab
+    # aven-managed project path mapping
+    - workspace_id: '0000000000000000'
+      workspace: default
+      project: trl
+      paths:
+        - /home/carlesoctav/personal/trl
 agent:
   task_intake:
     command: null
