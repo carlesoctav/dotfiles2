@@ -3,7 +3,7 @@ set -e
 
 # main machine fedora
 sudo dnf install -y --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release
-sudo dnf install -y git tmux stow neovim alacritty ghostty ripgrep fzf jq unzip gh
+sudo dnf install -y git tmux stow neovim alacritty ghostty ripgrep fzf jq unzip gh tree-sitter-cli gcc gcc-c++ make
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install -y flathub app.zen_browser.zen
 
