@@ -180,3 +180,8 @@ if [ -f '/home/carlesoctav/dotfiles2/fedora-tasks/google-cloud-sdk/path.bash.inc
 
 # The next line enables shell command completion for gcloud.
 if [ -f '/home/carlesoctav/dotfiles2/fedora-tasks/google-cloud-sdk/completion.bash.inc' ]; then . '/home/carlesoctav/dotfiles2/fedora-tasks/google-cloud-sdk/completion.bash.inc'; fi
+
+# Security: Enforce system CA bundle for Python (requests, urllib3, OpenSSL)
+export SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt
+export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-bundle.crt
+

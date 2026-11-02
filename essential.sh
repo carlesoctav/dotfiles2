@@ -3,7 +3,7 @@ set -e
 
 # main machine fedora
 sudo dnf install -y --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release
-sudo dnf install -y git tmux stow neovim alacritty ghostty ripgrep fzf jq unzip gh tree-sitter-cli gcc gcc-c++ make
+sudo dnf install -y git tmux stow neovim alacritty ghostty ripgrep fzf jq unzip gh tree-sitter-cli gcc gcc-c++ make android-tools
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install -y flathub app.zen_browser.zen
 
@@ -25,3 +25,11 @@ curl https://install.duckdb.org | bash
 
 ./ibm_fonts.sh
 
+
+./zenmode.sh
+
+
+
+sudo dnf config-manager addrepo --from-repofile https://download.docker.com/linux/fedora/docker-ce.repo
+sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo systemctl enable --now docker

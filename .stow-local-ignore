@@ -20,3 +20,7 @@ tablet-revert.sh
 /wallpapers
 /.workmux
 /.workmux.yaml
+off_kb.sh
+on_kb.sh
+toggle_kb.sh
+cloud.sh
