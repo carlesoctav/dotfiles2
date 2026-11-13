@@ -22,32 +22,6 @@ cat > "$POLICY_FILE" <<EOF
       "uBlock0@raymondhill.net": {"installation_mode": "force_installed", "install_url": "$AMO/ublock-origin/latest.xpi"},
       "{74e326aa-c645-4495-9287-b6febc5565a7}": {"installation_mode": "force_installed", "install_url": "$AMO/competitive-companion/latest.xpi"},
       "contact@alphaxiv.org": {"installation_mode": "force_installed", "install_url": "$AMO/alphaxiv/latest.xpi"}
-    },
-    "BlockAboutAddons": true,
-    "BlockAboutConfig": true,
-    "BlockAboutProfiles": true,
-    "DisablePrivateBrowsing": true,
-    "DisableSafeMode": true,
-    "WebsiteFilter": {
-      "Block": [
-        "*://*.facebook.com/*",
-        "*://*.instagram.com/*",
-        "*://*.twitter.com/*",
-        "*://*.x.com/*",
-        "*://*.reddit.com/*",
-        "*://*.tiktok.com/*",
-        "*://*.youtube.com/*",
-        "*://youtu.be/*",
-        "*://*.linkedin.com/*"
-      ],
-      "Exceptions": [
-        "*://*.linkedin.com/in/*",
-        "*://*.linkedin.com/jobs/*",
-        "*://*.linkedin.com/messaging/*",
-        "*://*.linkedin.com/login*",
-        "*://*.linkedin.com/checkpoint/*",
-        "*://*.linkedin.com/uas/*"
-      ]
     }
   }
 }
