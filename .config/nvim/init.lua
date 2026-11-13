@@ -1,6 +1,7 @@
 
 require("options")
 require("remap")
+require("comment")
 
 -- python host for jupyter tools (ipykernel, jupytext, etc.)
 vim.g.python3_host_prog = vim.fn.expand("~/.config/nvim/.venv/bin/python")
@@ -43,6 +44,17 @@ else
 	require("lazy").setup({
 		spec = {
 			{ import = "plugins" },
+		},
+		performance = {
+			rtp = {
+				disabled_plugins = {
+					"gzip",
+					"tarPlugin",
+					"tohtml",
+					"tutor",
+					"zipPlugin",
+				},
+			},
 		},
 	})
 

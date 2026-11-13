@@ -1,9 +1,9 @@
 return {
     {
         "andrewferrier/debugprint.nvim",
+        event = "VeryLazy",
         dependencies = {
             "echasnovski/mini.nvim",         -- Optional: Needed for line highlighting (full mini.nvim plugin)
-            "nvim-telescope/telescope.nvim", -- Optional: If you want to use the `:Debugprint search` command with telescope.nvim
         },
         version = "*",
         opts = {

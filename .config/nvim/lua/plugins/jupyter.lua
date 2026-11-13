@@ -148,6 +148,7 @@ vim.api.nvim_create_autocmd("FileType", {
 return {
     {
         "jpalardy/vim-slime",
+        ft = { "python", "quarto", "markdown" },
         init = function()
             vim.g.slime_target = "tmux"
             vim.g.slime_bracketed_paste = 1
@@ -161,6 +162,7 @@ return {
     },
     {
         "goerz/jupytext.nvim",
+        event = { "BufReadPre *.ipynb", "BufNewFile *.ipynb" },
         version = "0.2.0",
         opts = {
             format = "py:percent",
@@ -169,6 +171,7 @@ return {
     },
     {
         "jmbuhr/otter.nvim",
+        ft = { "quarto", "markdown" },
         dependencies = { "nvim-treesitter/nvim-treesitter" },
         opts = {},
     },

@@ -43,3 +43,6 @@ opt.signcolumn = "yes"
 -- opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" }
 opt.cursorline = true
 opt.showmode = false
+
+-- native LSP completion popup
+opt.completeopt = { "menu", "menuone", "noselect", "popup" }

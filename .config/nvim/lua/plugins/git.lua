@@ -1,6 +1,7 @@
 return {
 	{
 		"lewis6991/gitsigns.nvim",
+		event = { "BufReadPre", "BufNewFile" },
 		config = function(opts)
 			require('gitsigns').setup({
 				sign_priority = 100,
@@ -48,7 +49,7 @@ return {
 					gitsigns.reset_hunk()
 				end
 			end, { desc = 'Restore change' })
-				map('n', '<leader>th', function()
+				map('n', '<leader>qh', function()
 					local qflist = vim.fn.getqflist({ winid = 0, title = 0 })
 					local is_open = qflist.winid ~= 0 and vim.api.nvim_win_is_valid(qflist.winid)
 					if is_open and qflist.title == 'Hunks' then
@@ -64,7 +65,10 @@ return {
 		end
 	},
 
-	"tpope/vim-fugitive",
+	{
+		"tpope/vim-fugitive",
+		cmd = { "G", "Git", "Gdiffsplit", "Gvdiffsplit", "Gread", "Gwrite", "Ggrep", "GMove", "GDelete", "GBrowse" },
+	},
 
     -- co — choose ours
     -- ct — choose theirs
@@ -72,6 +76,6 @@ return {
     -- c0 — choose none
     -- ]x — move to previous conflict
     -- [x — move to next conflict
-	{'akinsho/git-conflict.nvim', version = "*", config = true}
+	{'akinsho/git-conflict.nvim', version = "*", event = { "BufReadPre", "BufNewFile" }, config = true}
 
 }
